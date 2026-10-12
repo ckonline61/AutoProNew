@@ -2,9 +2,9 @@
 
 **Date:** 2026-10-12
 
-**Current Phase:** Phase 03 — Database Foundation ✅ COMPLETE
+**Current Phase:** Phase 04 — Authentication & Authorization ✅ COMPLETE
 
-**Last Completed Phase:** Phase 03
+**Last Completed Phase:** Phase 04
 
 ## Completed
 
@@ -12,24 +12,29 @@
 - [x] Phase 01: Monorepo / Project Foundation
 - [x] Phase 02: Backend Foundation
 - [x] Phase 03: Database Foundation
-  - 10 MongoDB models with TypeScript interfaces
-  - Proper schema validation, timestamps, indexes
-  - Unique constraints (email, phone, booking numbers, etc.)
-  - ObjectId references between collections
-  - Domain enums used throughout
-  - Barrel export for all models
-  - All 34 tests still passing
+- [x] Phase 04: Authentication & Authorization
+  - JWT access token + refresh token system
+  - Password hashing with bcryptjs (10 rounds)
+  - Customer registration & login
+  - Token refresh & logout with invalidation
+  - authenticate middleware (Bearer token verification)
+  - authorize middleware (role-based: CUSTOMER, MECHANIC, INSPECTOR, ADMIN, SUPER_ADMIN)
+  - Auth rate limiter (5 req/min for login/register)
+  - Zod validation for all auth inputs
+  - GET /me — protected profile endpoint
+  - 58 tests passing across 5 suites
 
 ## Working Features
 
-- Backend health endpoint with DB status
-- Central error handling (AppError + Mongoose errors)
-- Standard API response format
-- Request ID tracking, Winston logging
-- Security middleware (Helmet, CORS, rate limiting)
-- Zod validation middleware
-- MongoDB connection management
-- 10 Mongoose models ready
+- Auth: POST /api/v1/auth/register (customer registration)
+- Auth: POST /api/v1/auth/login (JWT + refresh token)
+- Auth: POST /api/v1/auth/refresh (token renewal)
+- Auth: POST /api/v1/auth/logout (token invalidation)
+- Auth: GET /api/v1/auth/me (protected profile)
+- Health: GET /api/v1/health (with DB status)
+- Middleware: authenticate, authorize, rate limiting, validation
+- Error handling: AppError hierarchy + Mongoose error mapping
+- Logging: Winston structured logging
 
 ## Known Bugs
 
@@ -37,25 +42,23 @@
 
 ## Failed Tests
 
-- None (34/34 passing)
+- None (58/58 passing)
 
 ## Pending Tasks
 
-- Phase 04: Authentication & Authorization
+- Phase 05: Customer Profile + Vehicle + Address management
 
 ## Environment
 
 - Development: Backend (port 5000), Admin (5173), Web (5174)
-- Staging: Not configured
-- Production: Not configured
 
 ## Backend
 
-- Status: ✅ Complete through Phase 03
+- Status: ✅ Complete through Phase 04 (auth system functional)
 
 ## Database
 
-- Status: ✅ 10 models created (users, vehicles, addresses, service_categories, services, mechanics, service_areas, feature_flags, app_config, audit_logs)
+- Status: ✅ 10 models created, User model has auth fields (password, refreshTokens)
 
 ## Customer App
 
@@ -73,26 +76,11 @@
 
 - Status: ✅ Foundation (Phase 01)
 
-## Maps
-
-- Status: Not configured (Phase 09)
-
-## Payment
-
-- Status: Not configured (Phase 11)
-
-## Notifications
-
-- Status: Not configured (Phase 13)
-
-## Invoice
-
-- Status: Not started (Phase 12)
-
 ## Security
 
-- Status: Middleware configured, auth implementation pending (Phase 04)
+- Status: ✅ JWT auth, bcrypt hashing, rate limiting, role-based authorization
+- No secrets in code, .env.example only
 
 ## Next Phase
 
-- **Phase 04: Authentication & Authorization** — JWT, refresh tokens, OTP, roles, protected routes
+- **Phase 05: Customer Profile + Vehicle + Address Management**

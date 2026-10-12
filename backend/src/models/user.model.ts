@@ -11,6 +11,7 @@ export interface IUser extends Document {
   isActive: boolean;
   isVerified: boolean;
   deviceTokens: string[];
+  refreshTokens?: string[];
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -27,6 +28,7 @@ const userSchema = new Schema<IUser>(
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     deviceTokens: [{ type: String }],
+    refreshTokens: [{ type: String, select: false }],
     lastLogin: { type: Date },
   },
   {

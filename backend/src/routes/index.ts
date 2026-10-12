@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { apiResponse } from '../utils/api-response';
 import { getDatabaseStatus } from '../config/database';
 import { config } from '../config';
+import authRoutes from './auth.routes';
 
 /**
  * API v1 Router
@@ -29,7 +30,7 @@ router.get('/health', (_req, res) => {
 });
 
 // Future phase routes will be added here:
-// Phase 04: router.use('/auth', authRoutes);
+router.use('/auth', authRoutes);
 // Phase 05: router.use('/users', userRoutes);
 // Phase 05: router.use('/vehicles', vehicleRoutes);
 // Phase 05: router.use('/addresses', addressRoutes);
