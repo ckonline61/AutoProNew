@@ -10,4 +10,5 @@ export { AppConfig, IAppConfig } from './app-config.model';
 export { AuditLog, IAuditLog } from './audit-log.model';
 export { Booking, IBooking, IStatusHistory } from './booking.model';
 export { EmergencyRequest, IEmergencyRequest, IEmergencyStatusHistory } from './emergency-request.model';
+export { Payment, IPayment } from './payment.model';
 

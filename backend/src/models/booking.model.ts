@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
-import { BookingStatus } from '../types';
+import { BookingStatus, PaymentStatus } from '../types';
 
 export interface IStatusHistory {
   status: BookingStatus;
@@ -17,6 +17,7 @@ export interface IBooking extends Document {
   serviceIds: Types.ObjectId[];
   mechanicId?: Types.ObjectId;
   status: BookingStatus;
+  paymentStatus?: PaymentStatus;
   scheduledDate: Date;
   scheduledTime: string;
   estimatedDuration: number;
@@ -61,6 +62,11 @@ const bookingSchema = new Schema<IBooking>(
       enum: Object.values(BookingStatus),
       default: BookingStatus.PENDING,
       required: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: Object.values(PaymentStatus),
+      default: PaymentStatus.PENDING,
     },
     scheduledDate: { type: Date, required: true },
     scheduledTime: { type: String, required: true, trim: true },

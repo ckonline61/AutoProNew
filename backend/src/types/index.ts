@@ -82,9 +82,23 @@ export enum PaymentStatus {
   CREATED = 'CREATED',
   PENDING = 'PENDING',
   SUCCESS = 'SUCCESS',
+  COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   REFUNDED = 'REFUNDED',
   PARTIAL_REFUND = 'PARTIAL_REFUND',
+}
+
+/**
+ * Payment methods.
+ */
+export enum PaymentMethod {
+  CARD = 'CARD',
+  NETBANKING = 'NETBANKING',
+  UPI = 'UPI',
+  WALLET = 'WALLET',
+  EMI = 'EMI',
+  CASH = 'CASH',
+  RAZORPAY = 'RAZORPAY',
 }
 
 /**

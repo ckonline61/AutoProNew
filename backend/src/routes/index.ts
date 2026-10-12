@@ -60,7 +60,9 @@ import locationRoutes from './location.routes';
 
 router.use('/location', locationRoutes);
 // Phase 09: router.use('/location', locationRoutes);
-// Phase 11: router.use('/payments', paymentRoutes);
+import paymentRoutes from './payment.routes';
+
+router.use('/payments', paymentRoutes);
 // Phase 12: router.use('/invoices', invoiceRoutes);
 // Phase 13: router.use('/notifications', notificationRoutes);
 // Phase 14: router.use('/admin', adminRoutes);
