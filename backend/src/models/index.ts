@@ -20,3 +20,5 @@ export { Cart, ICart, ICartItem } from './cart.model';
 export { Order, IOrder, IOrderItem, IShippingAddress } from './order.model';
 export { UsedCarListing, IUsedCarListing, IUsedCarLocation } from './used-car-listing.model';
 export { InspectionReport, IInspectionReport, IInspectionCategory, InspectionStatus } from './inspection-report.model';
+export { SupportTicket, ISupportTicket, TicketCategory, TicketStatus, ITicketMessage } from './support-ticket.model';
+export { CmsPage, ICmsPage, CmsCategory } from './cms-page.model';

@@ -91,4 +91,31 @@ import inspectionRoutes from './inspection.routes';
 router.use('/used-cars', usedCarRoutes);
 router.use('/inspections', inspectionRoutes);
 
+// Phase 17: Admin Dashboard & Feature Flags
+import adminRoutes from './admin.routes';
+import featureFlagRoutes from './feature-flag.routes';
+
+router.use('/admin', adminRoutes);
+router.use('/feature-flags', featureFlagRoutes);
+
+// Phase 18: Support & Audit Logs
+import supportRoutes from './support.routes';
+import adminSupportRoutes from './admin-support.routes';
+import adminAuditRoutes from './admin-audit.routes';
+
+router.use('/support', supportRoutes);
+router.use('/admin/support', adminSupportRoutes);
+router.use('/admin/audit-logs', adminAuditRoutes);
+
+// Phase 19: CMS & Remote Config
+import cmsRoutes from './cms.routes';
+import adminCmsRoutes from './admin-cms.routes';
+import appConfigRoutes from './app-config.routes';
+import adminConfigRoutes from './admin-config.routes';
+
+router.use('/cms', cmsRoutes);
+router.use('/admin/cms', adminCmsRoutes);
+router.use('/config', appConfigRoutes);
+router.use('/admin/config', adminConfigRoutes);
+
 export default router;
