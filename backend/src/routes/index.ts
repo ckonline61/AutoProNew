@@ -61,10 +61,12 @@ import locationRoutes from './location.routes';
 router.use('/location', locationRoutes);
 // Phase 09: router.use('/location', locationRoutes);
 import paymentRoutes from './payment.routes';
+import invoiceRoutes from './invoice.routes';
+import notificationRoutes from './notification.routes';
 
 router.use('/payments', paymentRoutes);
-// Phase 12: router.use('/invoices', invoiceRoutes);
-// Phase 13: router.use('/notifications', notificationRoutes);
+router.use('/invoices', invoiceRoutes);
+router.use('/notifications', notificationRoutes);
 // Phase 14: router.use('/admin', adminRoutes);
 // Phase 15: router.use('/config', configRoutes);
 // Phase 16: router.use('/cms', cmsRoutes);
