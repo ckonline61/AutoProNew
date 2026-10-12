@@ -1,12 +1,14 @@
+import http from 'http';
 import app from './app';
 import { config } from './config';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import { realtimeService } from './services/realtime.service';
 import { logger } from './utils/logger';
 
 /**
  * Start the Auto Pro Backend server.
  * 1. Connect to MongoDB
- * 2. Start Express HTTP server
+ * 2. Start Express HTTP server with WebSocket
  * 3. Handle graceful shutdown
  */
 const startServer = async (): Promise<void> => {
@@ -14,8 +16,12 @@ const startServer = async (): Promise<void> => {
     // Connect to database
     await connectDatabase();
 
+    // Create HTTP server & initialize WebSocket
+    const server = http.createServer(app);
+    realtimeService.initialize(server);
+
     // Start HTTP server
-    const server = app.listen(config.port, () => {
+    server.listen(config.port, () => {
       logger.info(`🚗 Auto Pro Backend started`, {
         environment: config.env,
         port: config.port,
