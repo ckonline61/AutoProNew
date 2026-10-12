@@ -67,13 +67,28 @@ import notificationRoutes from './notification.routes';
 router.use('/payments', paymentRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/notifications', notificationRoutes);
-// Phase 14: router.use('/admin', adminRoutes);
-// Phase 15: router.use('/config', configRoutes);
-// Phase 16: router.use('/cms', cmsRoutes);
-// Phase 17: router.use('/products', productRoutes);
-// Phase 17: router.use('/cart', cartRoutes);
-// Phase 17: router.use('/orders', orderRoutes);
-// Phase 18: router.use('/cars', carRoutes);
-// Phase 18: router.use('/inspections', inspectionRoutes);
+
+// Phase 14: Reviews & Coupons
+import reviewRoutes from './review.routes';
+import couponRoutes from './coupon.routes';
+
+router.use('/reviews', reviewRoutes);
+router.use('/coupons', couponRoutes);
+
+// Phase 15: Spare Parts Marketplace
+import sparePartRoutes from './spare-part.routes';
+import cartRoutes from './cart.routes';
+import orderRoutes from './order.routes';
+
+router.use('/spare-parts', sparePartRoutes);
+router.use('/cart', cartRoutes);
+router.use('/orders', orderRoutes);
+
+// Phase 16: Used Cars & Car Inspection
+import usedCarRoutes from './used-car.routes';
+import inspectionRoutes from './inspection.routes';
+
+router.use('/used-cars', usedCarRoutes);
+router.use('/inspections', inspectionRoutes);
 
 export default router;

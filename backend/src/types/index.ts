@@ -105,6 +105,7 @@ export enum PaymentMethod {
  * Order statuses (spare parts).
  */
 export enum OrderStatus {
+  PLACED = 'PLACED',
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
   PROCESSING = 'PROCESSING',
@@ -122,12 +123,14 @@ export enum OrderStatus {
  */
 export enum ListingStatus {
   DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
   PENDING_REVIEW = 'PENDING_REVIEW',
   APPROVED = 'APPROVED',
   PUBLISHED = 'PUBLISHED',
   SOLD = 'SOLD',
   REJECTED = 'REJECTED',
   EXPIRED = 'EXPIRED',
+  REMOVED = 'REMOVED',
 }
 
 /**

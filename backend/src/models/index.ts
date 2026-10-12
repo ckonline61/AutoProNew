@@ -13,3 +13,10 @@ export { EmergencyRequest, IEmergencyRequest, IEmergencyStatusHistory } from './
 export { Payment, IPayment } from './payment.model';
 export { Invoice, IInvoice, IInvoiceItem } from './invoice.model';
 export { Notification, INotification } from './notification.model';
+export { Review, IReview } from './review.model';
+export { Coupon, ICoupon, CouponDiscountType } from './coupon.model';
+export { SparePart, ISparePart } from './spare-part.model';
+export { Cart, ICart, ICartItem } from './cart.model';
+export { Order, IOrder, IOrderItem, IShippingAddress } from './order.model';
+export { UsedCarListing, IUsedCarListing, IUsedCarLocation } from './used-car-listing.model';
+export { InspectionReport, IInspectionReport, IInspectionCategory, InspectionStatus } from './inspection-report.model';
