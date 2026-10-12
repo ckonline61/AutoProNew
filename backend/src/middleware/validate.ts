@@ -22,8 +22,17 @@ export const validate = (
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const data = schema.parse(req[source]);
-      // Replace with parsed/coerced data
-      req[source] = data;
+      // Replace with parsed/coerced data (safely handle Express 5 getters)
+      try {
+        (req as unknown as Record<string, unknown>)[source] = data;
+      } catch {
+        Object.defineProperty(req, source, {
+          value: data,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
+      }
       next();
     } catch (error) {
       if (error instanceof ZodError) {

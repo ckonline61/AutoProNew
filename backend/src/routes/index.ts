@@ -31,13 +31,34 @@ router.get('/health', (_req, res) => {
 
 // Future phase routes will be added here:
 router.use('/auth', authRoutes);
+
+import userRoutes from './user.routes';
+import vehicleRoutes from './vehicle.routes';
+import addressRoutes from './address.routes';
+
+router.use('/users/profile', userRoutes);
+router.use('/vehicles', vehicleRoutes);
+router.use('/addresses', addressRoutes);
 // Phase 05: router.use('/users', userRoutes);
 // Phase 05: router.use('/vehicles', vehicleRoutes);
 // Phase 05: router.use('/addresses', addressRoutes);
+import serviceRoutes from './service.routes';
+import bookingRoutes from './booking.routes';
+
+router.use('/services', serviceRoutes);
+router.use('/bookings', bookingRoutes);
 // Phase 06: router.use('/services', serviceRoutes);
-// Phase 06: router.use('/bookings', bookingRoutes);
+import mechanicRoutes from './mechanic.routes';
+
+router.use('/mechanics', mechanicRoutes);
 // Phase 07: router.use('/mechanics', mechanicRoutes);
+import emergencyRoutes from './emergency.routes';
+
+router.use('/emergency', emergencyRoutes);
 // Phase 08: router.use('/emergency', emergencyRoutes);
+import locationRoutes from './location.routes';
+
+router.use('/location', locationRoutes);
 // Phase 09: router.use('/location', locationRoutes);
 // Phase 11: router.use('/payments', paymentRoutes);
 // Phase 12: router.use('/invoices', invoiceRoutes);
