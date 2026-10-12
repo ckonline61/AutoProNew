@@ -10,6 +10,7 @@ import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found';
 import { requestId } from './middleware/request-id';
 import { apiResponse } from './utils/api-response';
+import apiRoutes from './routes';
 
 const app = express();
 
@@ -37,7 +38,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression
 app.use(compression());
 
-// Logging
+// Logging (use morgan for HTTP request logging in non-test environments)
 if (config.env !== 'test') {
   app.use(morgan('dev'));
 }
@@ -45,20 +46,8 @@ if (config.env !== 'test') {
 // Request ID
 app.use(requestId);
 
-// Health check
-app.get(`/api/${config.apiVersion}/health`, (_req, res) => {
-  res.json(apiResponse.success({
-    status: 'healthy',
-    service: 'auto-pro-backend',
-    version: config.apiVersion,
-    timestamp: new Date().toISOString(),
-    environment: config.env,
-    uptime: process.uptime(),
-  }, 'Service is running'));
-});
-
-// API routes will be added here in future phases
-// app.use(`/api/${config.apiVersion}/auth`, authRoutes);
+// API routes (versioned)
+app.use(`/api/${config.apiVersion}`, apiRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
