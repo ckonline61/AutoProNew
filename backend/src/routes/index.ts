@@ -118,4 +118,9 @@ router.use('/admin/cms', adminCmsRoutes);
 router.use('/config', appConfigRoutes);
 router.use('/admin/config', adminConfigRoutes);
 
+// Phase 20: AI Integration Layer & Final Polish
+import aiRoutes from './ai.routes';
+
+router.use('/ai', aiRoutes);
+
 export default router;
