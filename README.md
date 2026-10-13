@@ -106,3 +106,9 @@ npm run dev              # Start dev server (http://localhost:5174)
 ## 📄 License
 
 UNLICENSED - Private Project
+
+## Verified local preview
+
+Run `powershell -ExecutionPolicy Bypass -File .\START_PREVIEW.ps1` after dependency installation and MongoDB startup. Website: http://127.0.0.1:5174/ — Admin: http://127.0.0.1:5173/login.
+
+See [current audit and limitations](docs/PROJECT_AUDIT.md). Several frontend flows are still previews; passing builds do not establish production readiness.

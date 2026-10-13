@@ -69,7 +69,6 @@ const emergencyRequestSchema = new Schema<IEmergencyRequest>(
   { timestamps: true }
 );
 
-emergencyRequestSchema.index({ requestNumber: 1 }, { unique: true });
 emergencyRequestSchema.index({ customerId: 1 });
 emergencyRequestSchema.index({ assignedProviderId: 1 });
 emergencyRequestSchema.index({ status: 1 });

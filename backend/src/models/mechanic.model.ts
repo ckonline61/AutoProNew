@@ -60,7 +60,6 @@ const mechanicSchema = new Schema<IMechanic>(
   { timestamps: true }
 );
 
-mechanicSchema.index({ userId: 1 }, { unique: true });
 mechanicSchema.index({ approvalStatus: 1 });
 mechanicSchema.index({ isAvailable: 1 });
 mechanicSchema.index({ isOnline: 1 });

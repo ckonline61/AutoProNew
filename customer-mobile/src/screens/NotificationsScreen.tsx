@@ -33,7 +33,7 @@ export const NotificationsScreen: React.FC<Props> = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
         <View>

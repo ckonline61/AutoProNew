@@ -1,6 +1,6 @@
 # AUTO PRO PROJECT STATE
 
-**Date:** 2026-10-12  
+**Date:** 2026-10-13
 **Status:** 🚀 BACKEND COMPLETE  
 **Current Phase:** Phase 20 — AI Integration Layer & Final Polish ✅ COMPLETE  
 **Last Completed Phase:** Phase 20  
@@ -268,7 +268,7 @@
 
 ## Next Steps: Frontend Development
 
-Backend is **100% complete**, fully tested, typed, and production ready. The next stage of development will implement the user interfaces:
+Backend build and the current test suite pass. Production readiness and full frontend integration are not yet established. The next stage of development will implement the user interfaces:
 
 1. **Customer Mobile Application (`apps/customer-mobile`)**
    - React Native / Expo application
@@ -285,3 +285,12 @@ Backend is **100% complete**, fully tested, typed, and production ready. The nex
 4. **Public Web Experience (`apps/web-landing`)**
    - Next.js / React
    - Landing page, service pricing calculator, used car showcase, spare parts store, static CMS pages
+## Repair audit — 2026-10-13
+
+Development preview runs at http://127.0.0.1:5174/ and administrator login at http://127.0.0.1:5173/login. Backend health confirms local MongoDB connectivity.
+
+Verified after repairs: backend build/typecheck/lint and 147 tests; web build/lint and 3 catalogue mapping tests; admin build/lint and 5 authentication regression tests; both mobile apps typecheck/lint and their existing single placeholder tests. Native mobile builds were not run.
+
+Fixed admin fake authentication, nested token parsing, role checks and refresh-token logout; mobile TypeScript and current StatusBar compatibility; fixed mobile booking date; duplicate database indexes; public catalogue API field mapping and out-of-stock actions; false preview success messages; public 404 routing; admin route bundle splitting.
+
+The platform is still under development: frontend mock data, local-only mutations, extended admin placeholders and missing complete checkout/booking/contact flows remain. See [Project audit](docs/PROJECT_AUDIT.md) for the precise limits and restart instructions. Use START_PREVIEW.ps1 to restart the verified local previews.

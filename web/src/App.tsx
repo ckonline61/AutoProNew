@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import ServicesPage from './pages/ServicesPage';
@@ -23,6 +23,7 @@ const App: React.FC = () => {
           <Route path="contact" element={<ContactPage />} />
           <Route path="privacy" element={<PrivacyPolicyPage />} />
           <Route path="terms" element={<TermsPage />} />
+          <Route path="*" element={<div className="px-6 py-24 text-center"><h1 className="text-3xl font-bold">Page not found</h1><p className="my-4">The requested page does not exist.</p><Link className="text-blue-600 underline" to="/">Return home</Link></div>} />
         </Route>
       </Routes>
     </BrowserRouter>

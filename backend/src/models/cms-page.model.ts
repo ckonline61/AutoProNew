@@ -71,7 +71,6 @@ const cmsPageSchema = new Schema<ICmsPage>(
   { timestamps: true }
 );
 
-cmsPageSchema.index({ slug: 1 }, { unique: true });
 cmsPageSchema.index({ category: 1 });
 cmsPageSchema.index({ isPublished: 1 });
 cmsPageSchema.index({ sortOrder: 1, createdAt: -1 });

@@ -1,19 +1,20 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AdminLayout } from './components/layout/AdminLayout';
-import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { BookingsPage } from './pages/BookingsPage';
-import { MechanicsPage } from './pages/MechanicsPage';
-import { UsersPage } from './pages/UsersPage';
-import { PaymentsPage } from './pages/PaymentsPage';
-import { ServicesPage } from './pages/ServicesPage';
-import { SupportPage } from './pages/SupportPage';
-import { FeatureFlagsPage } from './pages/FeatureFlagsPage';
-import { CmsPage } from './pages/CmsPage';
-import { PlaceholderModulePage } from './pages/PlaceholderModulePage';
+const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(module => ({ default: module.DashboardPage })));
+const BookingsPage = lazy(() => import('./pages/BookingsPage').then(module => ({ default: module.BookingsPage })));
+const MechanicsPage = lazy(() => import('./pages/MechanicsPage').then(module => ({ default: module.MechanicsPage })));
+const UsersPage = lazy(() => import('./pages/UsersPage').then(module => ({ default: module.UsersPage })));
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then(module => ({ default: module.PaymentsPage })));
+const ServicesPage = lazy(() => import('./pages/ServicesPage').then(module => ({ default: module.ServicesPage })));
+const SupportPage = lazy(() => import('./pages/SupportPage').then(module => ({ default: module.SupportPage })));
+const FeatureFlagsPage = lazy(() => import('./pages/FeatureFlagsPage').then(module => ({ default: module.FeatureFlagsPage })));
+const CmsPage = lazy(() => import('./pages/CmsPage').then(module => ({ default: module.CmsPage })));
+const PlaceholderModulePage = lazy(() => import('./pages/PlaceholderModulePage').then(module => ({ default: module.PlaceholderModulePage })));
 import { Package, ShoppingCart, Car, FileCheck, Star, Ticket, Settings, ShieldCheck } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -30,7 +31,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
+          <Suspense fallback={<div className="p-8 text-center" role="status">Loading page...</div>}><Routes>
             <Route path="/login" element={<LoginPage />} />
 
             <Route
@@ -136,7 +137,7 @@ function App() {
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          </Routes></Suspense>
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>

@@ -26,7 +26,7 @@ const paymentSchema = new Schema<IPayment>(
     customerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, default: 'INR', trim: true },
-    razorpayOrderId: { type: String, sparse: true },
+    razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String, sparse: true },
     razorpaySignature: { type: String },
     status: { type: String, enum: Object.values(PaymentStatus), default: PaymentStatus.PENDING },
@@ -41,7 +41,7 @@ const paymentSchema = new Schema<IPayment>(
 
 paymentSchema.index({ bookingId: 1 });
 paymentSchema.index({ customerId: 1 });
-paymentSchema.index({ razorpayOrderId: 1 });
+paymentSchema.index({ razorpayOrderId: 1 }, { sparse: true });
 paymentSchema.index({ status: 1 });
 
 export const Payment = mongoose.model<IPayment>('Payment', paymentSchema);

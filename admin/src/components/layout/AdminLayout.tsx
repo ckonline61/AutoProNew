@@ -198,6 +198,7 @@ export const AdminLayout: React.FC = () => {
         {/* Content Outlet */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
+            <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Development preview: some modules use sample data and local-only changes. Verify API integration before operating on real records.</p>
             <Outlet />
           </div>
         </main>

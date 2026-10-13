@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { normalizeCatalogItem } from './catalog';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -9,7 +10,13 @@ const api = axios.create({
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const path = response.config.url?.split('?')[0] || '';
+    if (['/services', '/services/categories', '/spare-parts', '/used-cars'].includes(path) && Array.isArray(response.data?.data)) {
+      response.data.data = response.data.data.map((item: Record<string, unknown>) => normalizeCatalogItem(path, item));
+    }
+    return response;
+  },
   (error) => {
     return Promise.reject(error);
   }

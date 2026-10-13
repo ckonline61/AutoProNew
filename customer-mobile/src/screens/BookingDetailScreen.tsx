@@ -18,7 +18,7 @@ import type { HomeStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'BookingDetail'>;
 
-export const BookingDetailScreen: React.FC<Props> = ({ route, navigation }) => {
+export const BookingDetailScreen: React.FC<Props> = ({ route }) => {
   const { bookingId, booking: initialBooking } = route.params;
 
   const foundBooking =
@@ -64,7 +64,7 @@ export const BookingDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header Summary Card */}

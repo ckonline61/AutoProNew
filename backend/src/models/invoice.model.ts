@@ -59,7 +59,6 @@ const invoiceSchema = new Schema<IInvoice>(
   { timestamps: true }
 );
 
-invoiceSchema.index({ invoiceNumber: 1 }, { unique: true });
 invoiceSchema.index({ bookingId: 1 });
 invoiceSchema.index({ customerId: 1 });
 invoiceSchema.index({ status: 1 });

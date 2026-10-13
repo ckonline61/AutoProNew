@@ -34,7 +34,11 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>(vehicles[0]?.id || '');
   const [selectedAddressId, setSelectedAddressId] = useState<string>(addresses[0]?.id || '');
   const [serviceType, setServiceType] = useState<ServiceType>('DOORSTEP');
-  const [selectedDate, setSelectedDate] = useState<string>('Tomorrow, 10:00 AM');
+  const [selectedDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+  });
   const [selectedSlot, setSelectedSlot] = useState<string>(TIME_SLOTS[0]);
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -62,7 +66,7 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
         registrationNumber: selectedVehicle.registrationNumber,
       },
       address: selectedAddress,
-      scheduledDate: '2026-10-14',
+      scheduledDate: selectedDate,
       scheduledTime: selectedSlot,
       serviceType,
       status: 'CONFIRMED',
@@ -100,7 +104,7 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Service Summary Header */}

@@ -21,7 +21,6 @@ const serviceCategorySchema = new Schema<IServiceCategory>(
   { timestamps: true }
 );
 
-serviceCategorySchema.index({ name: 1 }, { unique: true });
 serviceCategorySchema.index({ sortOrder: 1 });
 serviceCategorySchema.index({ isActive: 1 });
 

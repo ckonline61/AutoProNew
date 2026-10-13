@@ -77,15 +77,15 @@ const ContactPage: React.FC = () => {
           <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Send us a Message</h2>
             <p className="text-xs text-gray-500 mb-6">
-              Fill in your details below and an Auto Pro specialist will get back to you immediately.
+              Preview the contact form below. Message delivery is under development; use the email link to contact support.
             </p>
 
             {submitted ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center space-y-3">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                <h4 className="text-lg font-bold text-emerald-900">Message Received!</h4>
+                <h4 className="text-lg font-bold text-emerald-900">Message Preview</h4>
                 <p className="text-xs text-emerald-700">
-                  Thank you, <strong className="text-emerald-900">{formData.name}</strong>. Our customer assistance desk has received your request and will reach out shortly.
+                  <strong className="text-emerald-900">{formData.name}</strong>, no message has been sent. Delivery is not connected yet. Please email support using the link above.
                 </p>
                 <button
                   onClick={() => {

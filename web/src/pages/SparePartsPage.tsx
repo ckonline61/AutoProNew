@@ -112,7 +112,7 @@ const SparePartsPage: React.FC = () => {
 
   const handleAddToCart = (partName: string) => {
     setCartItemsCount((prev) => prev + 1);
-    setNotification(`Added "${partName}" to your cart`);
+    setNotification(`Preview cart: added "${partName}" locally. Checkout is not connected yet.`);
     setTimeout(() => {
       setNotification(null);
     }, 2800);
@@ -256,9 +256,10 @@ const SparePartsPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-emerald-600 font-semibold block">In Stock & Ready to Ship</span>
+                        <span className="text-[10px] text-emerald-600 font-semibold block">{part.inStock === false ? 'Out of Stock' : 'In Stock & Ready to Ship'}</span>
                       </div>
                       <button
+                        disabled={part.inStock === false}
                         onClick={() => handleAddToCart(part.name)}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
                       >

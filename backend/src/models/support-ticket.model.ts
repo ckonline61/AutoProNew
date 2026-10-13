@@ -77,7 +77,6 @@ const supportTicketSchema = new Schema<ISupportTicket>(
   { timestamps: true }
 );
 
-supportTicketSchema.index({ ticketNumber: 1 }, { unique: true });
 supportTicketSchema.index({ userId: 1 });
 supportTicketSchema.index({ status: 1 });
 supportTicketSchema.index({ priority: 1 });

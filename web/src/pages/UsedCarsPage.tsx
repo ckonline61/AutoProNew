@@ -391,7 +391,7 @@ const UsedCarsPage: React.FC = () => {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  alert('Thank you! Our relationship manager will coordinate the test drive with you.');
+                  alert('Test-drive requests are not connected yet. No request has been sent. Please contact support directly.');
                   setSelectedCarForContact(null);
                 }}
                 className="space-y-3"

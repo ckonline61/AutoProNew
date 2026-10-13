@@ -8,7 +8,7 @@ import { AppNavigator } from './navigation/AppNavigator';
 const App: React.FC = () => {
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" />
       <AuthProvider>
         <NavigationContainer>
           <AppNavigator />

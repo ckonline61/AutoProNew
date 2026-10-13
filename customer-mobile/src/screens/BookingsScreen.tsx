@@ -36,7 +36,7 @@ export const BookingsScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
         <Text style={styles.title}>My Bookings</Text>

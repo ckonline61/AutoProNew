@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { isAxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldCheck, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin@autopro.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,7 +22,9 @@ export const LoginPage: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: unknown) {
-      if (err instanceof Error) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message || 'The server is unavailable. Please try again.');
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
         setError('Login failed. Please verify credentials.');

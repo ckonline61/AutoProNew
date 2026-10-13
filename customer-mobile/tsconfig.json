@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "ignoreDeprecations": "6.0",
-    "module": "commonjs",
+    "module": "esnext",
     "lib": [
       "es2022"
     ],
@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "types": [

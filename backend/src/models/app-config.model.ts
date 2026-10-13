@@ -23,6 +23,5 @@ const appConfigSchema = new Schema<IAppConfig>(
   { timestamps: true }
 );
 
-appConfigSchema.index({ key: 1 }, { unique: true });
 
 export const AppConfig = mongoose.model<IAppConfig>('AppConfig', appConfigSchema);

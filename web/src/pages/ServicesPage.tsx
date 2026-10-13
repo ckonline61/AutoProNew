@@ -303,9 +303,9 @@ const ServicesPage: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
                 <Check className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Service Slot Reserved!</h3>
+              <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Booking Preview</h3>
               <p className="text-sm text-gray-600 text-center mb-6">
-                You have initiated a booking for <strong className="text-gray-900">{bookingSuccessModal}</strong>. An Auto Pro service manager will contact you within 15 minutes to confirm your preferred doorstep slot and vehicle details.
+                You selected <strong className="text-gray-900">{bookingSuccessModal}</strong>. Online booking on this website is under development. No slot has been reserved and no payment has been taken.
               </p>
               <button
                 onClick={() => setBookingSuccessModal(null)}

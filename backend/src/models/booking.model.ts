@@ -83,7 +83,6 @@ const bookingSchema = new Schema<IBooking>(
   { timestamps: true }
 );
 
-bookingSchema.index({ bookingNumber: 1 }, { unique: true });
 bookingSchema.index({ customerId: 1 });
 bookingSchema.index({ mechanicId: 1 });
 bookingSchema.index({ status: 1 });

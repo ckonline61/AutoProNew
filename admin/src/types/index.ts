@@ -20,7 +20,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role: 'USER' | 'MECHANIC' | 'ADMIN' | 'SUPPORT';
+  role: 'USER' | 'CUSTOMER' | 'MECHANIC' | 'ADMIN' | 'SUPER_ADMIN' | 'SUPPORT';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   createdAt: string;
   updatedAt?: string;

@@ -27,6 +27,5 @@ const featureFlagSchema = new Schema<IFeatureFlag>(
   { timestamps: true }
 );
 
-featureFlagSchema.index({ key: 1 }, { unique: true });
 
 export const FeatureFlag = mongoose.model<IFeatureFlag>('FeatureFlag', featureFlagSchema);

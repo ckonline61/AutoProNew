@@ -58,7 +58,7 @@ const PROBLEM_TYPES: ProblemOption[] = [
   },
 ];
 
-export const EmergencyScreen: React.FC<Props> = ({ navigation }) => {
+export const EmergencyScreen: React.FC<Props> = () => {
   const [selectedType, setSelectedType] = useState<EmergencyProblemType>('JUMP_START');
   const [locationText, setLocationText] = useState('Baner High St, near Orchid Hotel, Pune (GPS ±5m)');
   const [description, setDescription] = useState('');
@@ -94,7 +94,7 @@ export const EmergencyScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#B91C1C" />
+      <StatusBar barStyle="light-content" />
 
       {/* Emergency SOS Banner Header */}
       <View style={styles.emergencyHeader}>
