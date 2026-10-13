@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isAxiosError } from 'axios';
 import api from '../config/api';
 import { STORAGE_KEYS } from '../constants';
 import { User, UserRole } from '../types';
@@ -9,160 +10,97 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isRestoring: boolean;
+  isPreview: boolean;
+  enterPreview: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   register: (name: string, email: string, phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   loadStoredToken: () => Promise<void>;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+function customerUser(value: User & { _id?: string }): User {
+  if (!value || value.role !== UserRole.CUSTOMER) throw new Error('Please sign in with a customer account.');
+  return { ...value, id: value.id || value._id || '' };
+}
+function errorMessage(error: unknown): string {
+  if (isAxiosError(error)) return error.response?.data?.message || 'Cannot reach the server. Check your Wi-Fi and API address, or use Preview App.';
+  return error instanceof Error ? error.message : 'Unable to sign in. Please try again.';
+}
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
+  const [isPreview, setIsPreview] = useState(false);
+  const clearSession = async () => {
+    await AsyncStorage.multiRemove([STORAGE_KEYS.AUTH_TOKEN, STORAGE_KEYS.USER_DATA, STORAGE_KEYS.REFRESH_TOKEN]);
+    setToken(null);
+    setUser(null);
+    setIsPreview(false);
+  };
   const loadStoredToken = async () => {
     try {
-      setIsLoading(true);
       const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-      const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-
-      if (storedToken && storedUser) {
+      if (storedToken) {
+        const response = await api.get('/auth/me');
+        setUser(customerUser(response.data?.data));
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
       }
-    } catch (error) {
-      console.warn('Failed to restore auth credentials', error);
+    } catch {
+      await clearSession();
     } finally {
-      setIsLoading(false);
+      setIsRestoring(false);
     }
   };
-
-  useEffect(() => {
-    loadStoredToken();
-  }, []);
-
-  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+  useEffect(() => { void loadStoredToken(); }, []);
+  const enterPreview = () => {
+    if (!__DEV__) return;
+    setIsPreview(true);
+    setToken(null);
+    setUser({ id: 'preview-customer', name: 'Preview Customer', email: 'preview@example.test', phone: '', role: UserRole.CUSTOMER });
+  };
+  const signIn = async (email: string, password: string) => {
+    const response = await api.post('/auth/login', { email, password });
+    const data = response.data?.data;
+    const verifiedUser = customerUser(data?.user);
+    if (typeof data?.tokens?.accessToken !== 'string' || typeof data?.tokens?.refreshToken !== 'string') {
+      throw new Error('The server returned an invalid login response.');
+    }
+    await AsyncStorage.multiSet([
+      [STORAGE_KEYS.AUTH_TOKEN, data.tokens.accessToken],
+      [STORAGE_KEYS.REFRESH_TOKEN, data.tokens.refreshToken],
+      [STORAGE_KEYS.USER_DATA, JSON.stringify(verifiedUser)],
+    ]);
+    setUser(verifiedUser);
+    setToken(data.tokens.accessToken);
+    setIsPreview(false);
+  };
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try { await signIn(email, password); return { success: true }; }
+    catch (error) { return { success: false, message: errorMessage(error) }; }
+    finally { setIsLoading(false); }
+  };
+  const register = async (name: string, email: string, phone: string, password: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      // Attempt API call
-      let authToken = 'mock_jwt_token_' + Date.now();
-      let loggedUser: User = {
-        id: 'usr_1',
-        name: email.split('@')[0] || 'Auto Pro Customer',
-        email,
-        phone: '+91 9876543210',
-        role: UserRole.CUSTOMER,
-      };
-
-      try {
-        const response = await api.post('/auth/login', { email, password });
-        if (response.data?.data) {
-          authToken = response.data.data.token || authToken;
-          loggedUser = response.data.data.user || loggedUser;
-        }
-      } catch (apiError) {
-        // Allow mock/dev login for prototyping if backend is not currently running
-        console.warn('Auth API not reachable, using mock session for local development', apiError);
-      }
-
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authToken);
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(loggedUser));
-
-      setToken(authToken);
-      setUser(loggedUser);
-
+      await api.post('/auth/register', { name, email, phone, password });
+      await signIn(email, password);
       return { success: true };
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login failed';
-      return { success: false, message };
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error) { return { success: false, message: errorMessage(error) }; }
+    finally { setIsLoading(false); }
   };
-
-  const register = async (
-    name: string,
-    email: string,
-    phone: string,
-    password: string
-  ): Promise<{ success: boolean; message?: string }> => {
+  const logout = async () => {
     try {
-      setIsLoading(true);
-      let authToken = 'mock_jwt_token_' + Date.now();
-      let registeredUser: User = {
-        id: 'usr_' + Date.now(),
-        name,
-        email,
-        phone,
-        role: UserRole.CUSTOMER,
-      };
-
-      try {
-        const response = await api.post('/auth/register', { name, email, phone, password });
-        if (response.data?.data) {
-          authToken = response.data.data.token || authToken;
-          registeredUser = response.data.data.user || registeredUser;
-        }
-      } catch (apiError) {
-        console.warn('Register API not reachable, using mock session for local development', apiError);
-      }
-
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authToken);
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(registeredUser));
-
-      setToken(authToken);
-      setUser(registeredUser);
-
-      return { success: true };
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Registration failed';
-      return { success: false, message };
-    } finally {
-      setIsLoading(false);
-    }
+      if (token && !isPreview) await api.post('/auth/logout', { refreshToken: await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) });
+    } catch { /* Local logout must work offline. */ }
+    finally { await clearSession(); }
   };
-
-  const logout = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      try {
-        await api.post('/auth/logout');
-      } catch {
-        // proceed even if network fails
-      }
-      await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      setToken(null);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAuthenticated: !!token,
-        isLoading,
-        login,
-        register,
-        logout,
-        loadStoredToken,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, token, isAuthenticated: !!user && (!!token || isPreview), isLoading, isRestoring, isPreview, enterPreview, login, register, logout, loadStoredToken }}>{children}</AuthContext.Provider>;
 };
-
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

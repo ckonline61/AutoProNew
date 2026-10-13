@@ -19,7 +19,7 @@ import type { AuthStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, enterPreview } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -34,8 +34,6 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     if (!password) {
       errs.password = 'Password is required';
-    } else if (password.length < 6) {
-      errs.password = 'Password must be at least 6 characters';
     }
 
     setErrors(errs);
@@ -49,11 +47,6 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     if (!result.success) {
       Alert.alert('Login Failed', result.message || 'Please check your credentials and try again.');
     }
-  };
-
-  const handleQuickDemo = () => {
-    setEmail('customer@autopro.com');
-    setPassword('auto123456');
   };
 
   return (
@@ -118,13 +111,14 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {__DEV__ && <TouchableOpacity
             style={styles.demoButton}
-            onPress={handleQuickDemo}
+            onPress={enterPreview}
+            disabled={isLoading}
             activeOpacity={0.7}
           >
-            <Text style={styles.demoButtonText}>⚡ Fill Demo Credentials</Text>
-          </TouchableOpacity>
+            <Text style={styles.demoButtonText}>Preview App — Sample Data</Text>
+          </TouchableOpacity>}
         </View>
 
         <View style={styles.footer}>

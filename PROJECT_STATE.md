@@ -294,3 +294,7 @@ Verified after repairs: backend build/typecheck/lint and 147 tests; web build/li
 Fixed admin fake authentication, nested token parsing, role checks and refresh-token logout; mobile TypeScript and current StatusBar compatibility; fixed mobile booking date; duplicate database indexes; public catalogue API field mapping and out-of-stock actions; false preview success messages; public 404 routing; admin route bundle splitting.
 
 The platform is still under development: frontend mock data, local-only mutations, extended admin placeholders and missing complete checkout/booking/contact flows remain. See [Project audit](docs/PROJECT_AUDIT.md) for the precise limits and restart instructions. Use START_PREVIEW.ps1 to restart the verified local previews.
+
+## Customer mobile launch repair — 2026-10-13
+
+Expo SDK 57 launch is configured and verified: supported native dependencies, Expo entry point, Metro/Babel setup, strict typecheck/lint, six session tests, Android/iOS/web exports and browser navigation. Expo Go and React Native web preview run on port 8081. See [Customer preview](docs/CUSTOMER_PREVIEW.md) for QR/start instructions and precise limits. Physical-device validation and complete backend-driven business flows remain outstanding. Browser API CORS settings require a backend restart; automatic review blocked that restart. Dependency audit advisories remain documented.

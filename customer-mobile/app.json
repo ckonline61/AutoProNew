@@ -13,12 +13,15 @@
       "**/*"
     ],
     "ios": {
+      "bundleIdentifier": "com.autopro.customer",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.autopro.customer",
       "adaptiveIcon": {
         "backgroundColor": "#2563EB"
       }
-    }
+    },
+    "web": { "bundler": "metro" }
   }
 }

@@ -46,8 +46,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     }
     if (!password) {
       errs.password = 'Password is required';
-    } else if (password.length < 6) {
-      errs.password = 'Password must be at least 6 characters';
+    } else if (password.length < 8) {
+      errs.password = 'Password must be at least 8 characters';
     }
 
     setErrors(errs);
