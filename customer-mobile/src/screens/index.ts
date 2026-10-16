@@ -1,4 +1,4 @@
-// ── Original Screens ────────────────────────────────────
+// 🔧 Original Screens 🔧
 export * from './LoginScreen';
 export * from './RegisterScreen';
 export * from './HomeScreen';
@@ -16,7 +16,7 @@ export * from './AddressesScreen';
 export * from './SupportScreen';
 export * from './AccountScreen';
 
-// ── New Screens (Phase 2 - UI Redesign) ─────────────────
+// 🎨 New Screens (Phase 2 - UI Redesign) 🎨
 export * from './SplashScreen';
 export * from './OnboardingScreen';
 export * from './PaymentCheckoutScreen';
@@ -27,3 +27,12 @@ export * from './OffersScreen';
 export * from './ReviewScreen';
 export * from './SellCarFormScreen';
 export * from './SavedCarsScreen';
+
+// 🚀 Phase 3 - Final Screens 🚀
+export * from './ServiceCategoriesScreen';
+export * from './BookingConfirmationScreen';
+export * from './ProductDetailScreen';
+export * from './UsedCarDetailScreen';
+export * from './CarInspectionScreen';
+export * from './InspectionReportScreen';
+export * from './SellerListingStatusScreen';

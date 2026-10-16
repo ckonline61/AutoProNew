@@ -64,6 +64,7 @@ export type ProfileStackParamList = {
   ServiceHistory: undefined;
   ReviewScreen: { mechanicName: string; serviceDate: string; bookingId: string };
   SellCarForm: undefined;
+  SellerListingStatus: undefined;
   LiveTracking: { bookingId: string; mechanicName?: string; mechanicRating?: number };
 };
 

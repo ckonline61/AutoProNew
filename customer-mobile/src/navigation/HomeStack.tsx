@@ -8,6 +8,8 @@ import {
   BookingDetailScreen,
   EmergencyScreen,
 } from '../screens';
+import { ServiceCategoriesScreen } from '../screens/ServiceCategoriesScreen';
+import { BookingConfirmationScreen } from '../screens/BookingConfirmationScreen';
 import { PaymentCheckoutScreen } from '../screens/PaymentCheckoutScreen';
 import { InvoiceDetailScreen } from '../screens/InvoiceDetailScreen';
 import { LiveTrackingScreen } from '../screens/LiveTrackingScreen';
@@ -25,9 +27,11 @@ export const HomeStack: React.FC = () => {
       }}
     >
       <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="ServiceCategories" component={ServiceCategoriesScreen} />
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
       <Stack.Screen name="BookingForm" component={BookingFormScreen} />
       <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+      <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
       <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} />
       <Stack.Screen name="InvoiceDetail" component={InvoiceDetailScreen} />
       <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />

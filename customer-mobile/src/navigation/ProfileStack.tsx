@@ -9,6 +9,7 @@ import { ServiceHistoryScreen } from '../screens/ServiceHistoryScreen';
 import { ReviewScreen } from '../screens/ReviewScreen';
 import { SellCarFormScreen } from '../screens/SellCarFormScreen';
 import { LiveTrackingScreen } from '../screens/LiveTrackingScreen';
+import { SellerListingStatusScreen } from '../screens/SellerListingStatusScreen';
 import { COLORS } from '../theme';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -31,6 +32,7 @@ export const ProfileStack: React.FC = () => {
       <Stack.Screen name="ServiceHistory" component={ServiceHistoryScreen} />
       <Stack.Screen name="ReviewScreen" component={ReviewScreen} />
       <Stack.Screen name="SellCarForm" component={SellCarFormScreen} />
+      <Stack.Screen name="SellerListingStatus" component={SellerListingStatusScreen} />
       <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
     </Stack.Navigator>
   );
