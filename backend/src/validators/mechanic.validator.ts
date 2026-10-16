@@ -23,9 +23,13 @@ export const updateAvailabilitySchema = z.object({
 });
 
 export const updateLocationSchema = z.object({
+  jobId: objectIdSchema,
+  jobType: z.enum(['booking', 'emergency']),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
 });
+
+export const rejectJobSchema = z.object({ reason: z.string().trim().min(3).max(1000).optional() });
 
 export const verifyMechanicSchema = z.object({
   approvalStatus: z.nativeEnum(MechanicApprovalStatus),

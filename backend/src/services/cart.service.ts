@@ -1,9 +1,13 @@
 import { Types } from 'mongoose';
 import { Cart, ICart } from '../models/cart.model';
-import { SparePart } from '../models/spare-part.model';
-import { BadRequestError, NotFoundError } from '../errors/app-error';
+import { SparePart, ISparePart } from '../models/spare-part.model';
+import { Order } from '../models/order.model';
+import { BadRequestError, NotFoundError, ConflictError } from '../errors/app-error';
 
 export class CartService {
+  private ensureEditable(cart: ICart): void {
+    if (cart.checkoutInProgress) throw new ConflictError('Checkout is processing. Check order history before changing the cart.');
+  }
   /**
    * Get cart for user. If not exists, returns or initializes empty cart.
    */
@@ -20,6 +24,19 @@ export class CartService {
       });
     }
 
+    if (cart.checkoutInProgress && cart.checkoutOrderId && await Order.exists({ _id: cart.checkoutOrderId, userId })) {
+      const repaired = await Cart.findOneAndUpdate({ _id: cart._id, checkoutOrderId: cart.checkoutOrderId }, { $set: { items: [], totalAmount: 0, checkoutInProgress: false }, $unset: { checkoutOrderId: 1 }, $inc: { __v: 1 } }, { new: true });
+      if (repaired) return repaired;
+    }
+    if (!cart.checkoutInProgress) {
+      let changed = false;
+      cart.items.forEach(item => {
+        // getCart populated this reference above; mutation methods read unpopulated ids.
+        const part = item.sparePartId as unknown as ISparePart | null;
+        if (part && part.isActive) { const price = part.discountedPrice ?? part.price; if (item.price !== price) { item.price = price; changed = true; } }
+      });
+      if (changed) { cart.totalAmount = cart.items.reduce((total,item) => total + item.price * item.quantity,0); await cart.save(); }
+    }
     return cart;
   }
 
@@ -49,6 +66,7 @@ export class CartService {
       });
     }
 
+    this.ensureEditable(cart);
     const itemIndex = cart.items.findIndex(
       (item) => item.sparePartId.toString() === sparePartId
     );
@@ -81,6 +99,7 @@ export class CartService {
     if (!cart) {
       throw new NotFoundError('Cart not found');
     }
+    this.ensureEditable(cart);
 
     const itemIndex = cart.items.findIndex(
       (item) => item.sparePartId.toString() === sparePartId
@@ -119,6 +138,7 @@ export class CartService {
     if (!cart) {
       throw new NotFoundError('Cart not found');
     }
+    this.ensureEditable(cart);
 
     cart.items = cart.items.filter(
       (item) => item.sparePartId.toString() !== sparePartId
@@ -142,6 +162,7 @@ export class CartService {
       });
     }
 
+    this.ensureEditable(cart);
     cart.items = [];
     cart.totalAmount = 0;
     await cart.save();

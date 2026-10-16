@@ -108,7 +108,7 @@ export class AuthService {
       email: data.email,
       phone: data.phone,
       password: hashedPassword,
-      role: UserRole.CUSTOMER,
+      role: data.role ?? UserRole.CUSTOMER,
       isActive: true,
       isVerified: false,
       deviceTokens: [],
@@ -189,7 +189,7 @@ export class AuthService {
       }
 
       // Check if the refresh token is stored in the user's active tokens
-      if (user.refreshTokens && user.refreshTokens.length > 0 && !user.refreshTokens.includes(token)) {
+      if (!user.refreshTokens?.includes(token)) {
         throw new UnauthorizedError('Invalid or revoked refresh token');
       }
 

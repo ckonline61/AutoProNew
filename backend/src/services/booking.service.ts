@@ -3,11 +3,25 @@ import { Vehicle } from '../models/vehicle.model';
 import { Address } from '../models/address.model';
 import { serviceCatalogService } from './service.service';
 import { BookingFsm } from './booking-fsm';
-import { BookingStatus } from '../types';
+import { BookingStatus, UserRole } from '../types';
 import { BadRequestError, NotFoundError, ConflictError } from '../errors/app-error';
 import { CreateBookingInput, BookingQueryInput } from '../validators/booking.validator';
+import { Mechanic } from '../models/mechanic.model';
+import { User } from '../models/user.model';
+import { Types } from 'mongoose';
 
 export class BookingService {
+  public async assignMechanic(bookingId: string, mechanicId: string, actorId: string): Promise<IBooking> {
+    const mechanic = await Mechanic.findOne({ userId: mechanicId, isApproved: true, isAvailable: true });
+    const user = await User.findOne({ _id: mechanicId, role: UserRole.MECHANIC, isActive: true });
+    if (!mechanic || !user) throw new BadRequestError('Choose an active, approved and available mechanic');
+    const booking = await Booking.findOne({ _id: bookingId, isActive: true });
+    if (!booking) throw new NotFoundError('Booking not found');
+    BookingFsm.assertTransition(booking.status,BookingStatus.ASSIGNED);
+    const assigned = await Booking.findOneAndUpdate({ _id: bookingId, status: booking.status, isActive: true }, { $set: { mechanicId: new Types.ObjectId(mechanicId), status: BookingStatus.ASSIGNED }, $push: { statusHistory: { status: BookingStatus.ASSIGNED, timestamp: new Date(), updatedBy: new Types.ObjectId(actorId), reason: 'Assigned by administrator' } } }, { new: true, runValidators: true });
+    if (!assigned) throw new ConflictError('Booking changed while assigning. Refresh and retry.');
+    return assigned;
+  }
   /**
    * Helper to generate human-readable unique booking numbers (e.g. BK-20261012-XXXX).
    */
@@ -235,16 +249,12 @@ export class BookingService {
 
     BookingFsm.assertTransition(booking.status, newStatus);
 
-    booking.status = newStatus;
-    booking.statusHistory.push({
-      status: newStatus,
-      timestamp: new Date(),
-      updatedBy: updatedBy as unknown as undefined,
-      reason,
-    });
-
-    await booking.save();
-    return booking;
+    const updated = await Booking.findOneAndUpdate({ _id: bookingId, status: booking.status, isActive: true }, { $set: { status: newStatus }, $push: { statusHistory: { status: newStatus, timestamp: new Date(), updatedBy: updatedBy ? new Types.ObjectId(updatedBy) : undefined, reason } } }, { new: true, runValidators: true });
+    if (!updated) throw new ConflictError('Booking changed while updating. Refresh and retry.');
+    if (![BookingStatus.EN_ROUTE, BookingStatus.ARRIVED].includes(newStatus) && updated.mechanicId) {
+      await Mechanic.updateOne({ userId: updated.mechanicId }, { $unset: { currentLocation: 1 } });
+    }
+    return updated;
   }
 }
 

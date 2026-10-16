@@ -132,11 +132,13 @@ describe('Phase 07 — Mechanic Management & Job Dispatch', () => {
       const res = await request(app)
         .put('/api/v1/mechanics/location')
         .set('Authorization', `Bearer ${mechanicToken}`)
-        .send({ latitude: 19.076, longitude: 72.8777 });
+        .send({ latitude: 19.076, longitude: 72.8777, jobId: mockBookingId, jobType: 'booking' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(mechanicService.updateLocation).toHaveBeenCalledWith(mockMechanicUserId, {
+        jobId: mockBookingId,
+        jobType: 'booking',
         latitude: 19.076,
         longitude: 72.8777,
       });

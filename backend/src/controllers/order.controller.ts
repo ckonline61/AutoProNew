@@ -11,7 +11,7 @@ export const orderController = {
       throw new UnauthorizedError('User is not authenticated');
     }
 
-    const order = await orderService.placeOrder(userId, req.body.shippingAddress);
+    const order = await orderService.placeOrder(userId, req.body.shippingAddress, req.body.expectedTotal);
     res.status(201).json(apiResponse.success(order, 'Order placed successfully'));
   }),
 

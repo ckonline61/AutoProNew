@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,25 +9,17 @@ import {
   StatusBar,
 } from 'react-native';
 import { COLORS } from '../constants';
-import { SAMPLE_NOTIFICATIONS } from '../data/mockData';
-import { Notification } from '../types';
+import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
+import { Alert } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Notifications'>;
 
 export const NotificationsScreen: React.FC<Props> = () => {
-  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
-
-  const handleMarkAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-  };
+  const { notifications, markRead, loading, refresh } = useCustomerData();
+  const handleMarkAsRead = (id: string) => { void markRead(id).catch(error => Alert.alert('Update failed', requestError(error))); };
+  const handleMarkAllRead = () => { void markRead().catch(error => Alert.alert('Update failed', requestError(error))); };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -50,6 +42,8 @@ export const NotificationsScreen: React.FC<Props> = () => {
       </View>
 
       <FlatList
+        refreshing={loading}
+        onRefresh={() => void refresh()}
         data={notifications}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}

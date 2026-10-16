@@ -1,8 +1,24 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
 export const APP_NAME = 'Auto Pro';
 export const APP_VERSION = '0.1.0';
 
+function apiBaseUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) return process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (!__DEV__) throw new Error('Set EXPO_PUBLIC_API_BASE_URL before building a production app.');
+  const host = Constants.expoConfig?.hostUri?.split(':')[0] || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
+  return `http://${host}:5000/api/v1`;
+}
+
+export const STORAGE_KEYS = {
+  AUTH_TOKEN: 'autopro_mechanic_token',
+  REFRESH_TOKEN: 'autopro_mechanic_refresh',
+  USER_DATA: 'autopro_mechanic_user',
+};
+
 export const API_CONFIG = {
-  baseUrl: process.env.API_BASE_URL || 'http://localhost:5000/api/v1',
+  baseUrl: apiBaseUrl(),
   timeout: 30000,
 };
 

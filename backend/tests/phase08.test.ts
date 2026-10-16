@@ -127,7 +127,7 @@ describe('Phase 08 — Emergency Roadside Assistance (RSA)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(emergencyService.getById).toHaveBeenCalledWith(mockRequestId);
+      expect(emergencyService.getById).toHaveBeenCalledWith(mockRequestId, { id: mockCustomerId, role: UserRole.CUSTOMER });
     });
   });
 
@@ -185,7 +185,8 @@ describe('Phase 08 — Emergency Roadside Assistance (RSA)', () => {
       expect(emergencyService.updateStatus).toHaveBeenCalledWith(
         mockRequestId,
         EmergencyStatus.EN_ROUTE,
-        'Mechanic on the way'
+        'Mechanic on the way',
+        { id: mockProviderId, role: UserRole.MECHANIC }
       );
     });
 
@@ -206,7 +207,8 @@ describe('Phase 08 — Emergency Roadside Assistance (RSA)', () => {
       expect(emergencyService.cancel).toHaveBeenCalledWith(
         mockRequestId,
         UserRole.CUSTOMER,
-        'Found another assistance'
+        'Found another assistance',
+        { id: mockCustomerId, role: UserRole.CUSTOMER }
       );
     });
   });

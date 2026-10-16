@@ -3,6 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from './types';
 import { ProfileScreen, VehicleFormScreen, NotificationsScreen } from '../screens';
 import { COLORS } from '../constants';
+import { AddressesScreen } from '../screens/AddressesScreen';
+import { SupportScreen } from '../screens/SupportScreen';
+import { AccountScreen } from '../screens/AccountScreen';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -32,6 +35,9 @@ export const ProfileStack: React.FC = () => {
         component={NotificationsScreen}
         options={{ title: 'Activity & Alerts' }}
       />
+      <Stack.Screen name="Addresses" component={AddressesScreen} options={{ title: 'Service Addresses' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Customer Support' }} />
+      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Account & Security' }} />
     </Stack.Navigator>
   );
 };

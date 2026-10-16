@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants';
-import { INITIAL_VEHICLES, INITIAL_ADDRESSES } from '../data/mockData';
+import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
 import { VehicleCard } from '../components/VehicleCard';
-import { Vehicle, Address } from '../types';
+import { Vehicle } from '../types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/types';
 
@@ -21,8 +21,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileMain'>;
 
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { user, logout } = useAuth();
-  const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
-  const [addresses] = useState<Address[]>(INITIAL_ADDRESSES);
+  const { vehicles, addresses, removeVehicle } = useCustomerData();
 
   const handleAddVehicle = () => {
     navigation.navigate('VehicleForm');
@@ -38,8 +37,8 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+        onPress: async () => {
+          try { await removeVehicle(vehicleId); } catch (error) { Alert.alert('Delete failed', requestError(error)); }
         },
       },
     ]);
@@ -67,7 +66,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user?.name || 'Customer'}</Text>
             <Text style={styles.userEmail}>{user?.email || 'customer@autopro.com'}</Text>
-            <Text style={styles.userPhone}>{user?.phone || '+91 9876543210'}</Text>
+            <Text style={styles.userPhone}>{user?.phone || 'No phone number'}</Text>
           </View>
         </View>
 
@@ -101,6 +100,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         {/* My Addresses Section */}
         <View style={[styles.sectionHeader, { marginTop: 20 }]}>
           <Text style={styles.sectionTitle}>Saved Addresses</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Addresses')}><Text style={{ color: COLORS.primary }}>Manage Addresses</Text></TouchableOpacity>
         </View>
 
         {addresses.map((addr) => (
@@ -143,7 +143,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.settingItem}
-            onPress={() => Alert.alert('Security', 'Password change instructions sent to your registered email.')}
+            onPress={() => navigation.navigate('Account')}
             activeOpacity={0.7}
           >
             <Text style={styles.settingText}>🔒 Security & Password</Text>
@@ -154,7 +154,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.settingItem}
-            onPress={() => Alert.alert('Customer Care', 'Emergency toll-free helpline: 1800-AUTO-PRO')}
+            onPress={() => navigation.navigate('Support')}
             activeOpacity={0.7}
           >
             <Text style={styles.settingText}>📞 Help & 24/7 Roadside Support</Text>

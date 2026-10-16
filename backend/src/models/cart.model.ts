@@ -10,6 +10,8 @@ export interface ICart extends Document {
   userId: Types.ObjectId;
   items: ICartItem[];
   totalAmount: number;
+  checkoutInProgress: boolean;
+  checkoutOrderId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,8 +30,10 @@ const cartSchema = new Schema<ICart>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     items: [cartItemSchema],
     totalAmount: { type: Number, required: true, default: 0, min: 0 },
+    checkoutInProgress: { type: Boolean, default: false },
+    checkoutOrderId: { type: Schema.Types.ObjectId, ref: 'Order' },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 

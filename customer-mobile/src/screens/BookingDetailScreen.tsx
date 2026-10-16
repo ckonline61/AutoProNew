@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants';
 import { StatusTimeline } from '../components/StatusTimeline';
-import { INITIAL_BOOKINGS } from '../data/mockData';
-import { Booking } from '../types';
+import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
+import { Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 
@@ -21,14 +21,11 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'BookingDetail'>;
 export const BookingDetailScreen: React.FC<Props> = ({ route }) => {
   const { bookingId, booking: initialBooking } = route.params;
 
-  const foundBooking =
-    initialBooking ||
-    INITIAL_BOOKINGS.find((b) => b.id === bookingId) ||
-    INITIAL_BOOKINGS[0];
+  const { bookings, cancelBooking } = useCustomerData();
+  const booking = bookings.find(b => b.id === bookingId) || initialBooking;
+  if (!booking) return <View style={{ padding: 24 }}><Text>Booking not found. Refresh the bookings list.</Text></View>;
 
-  const [booking, setBooking] = useState<Booking>(foundBooking);
-
-  const canCancel = booking.status === 'PENDING' || booking.status === 'CONFIRMED';
+  const canCancel = ['PENDING','CONFIRMED','ASSIGNED','ACCEPTED'].includes(booking.status);
 
   const handleCancelBooking = () => {
     Alert.alert(
@@ -39,13 +36,9 @@ export const BookingDetailScreen: React.FC<Props> = ({ route }) => {
         {
           text: 'Yes, Cancel',
           style: 'destructive',
-          onPress: () => {
-            setBooking((prev) => ({
-              ...prev,
-              status: 'CANCELLED',
-              updatedAt: new Date().toISOString(),
-            }));
-            Alert.alert('Booking Cancelled', 'Your booking has been cancelled.');
+          onPress: async () => {
+            try { await cancelBooking(booking.id, 'Cancelled by customer in app'); }
+            catch (error) { Alert.alert('Cancellation failed', requestError(error)); }
           },
         },
       ]
@@ -53,13 +46,7 @@ export const BookingDetailScreen: React.FC<Props> = ({ route }) => {
   };
 
   const handleCallMechanic = () => {
-    if (booking.mechanic) {
-      Alert.alert(
-        'Call Assigned Mechanic',
-        `Dialing ${booking.mechanic.name} at ${booking.mechanic.phone}...`,
-        [{ text: 'OK' }]
-      );
-    }
+    if (booking.mechanic?.phone) void Linking.openURL(`tel:${booking.mechanic.phone}`).catch(error => Alert.alert('Unable to call', requestError(error)));
   };
 
   return (

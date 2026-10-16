@@ -11,7 +11,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { COLORS } from '../constants';
-import { FuelType, Vehicle } from '../types';
+import { FuelType } from '../types';
+import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/types';
 
@@ -20,12 +21,14 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'VehicleForm'>;
 const FUEL_TYPES: FuelType[] = ['PETROL', 'DIESEL', 'CNG', 'ELECTRIC', 'HYBRID'];
 
 export const VehicleFormScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { saveVehicle } = useCustomerData();
+  const [saving, setSaving] = useState(false);
   const vehicle = route.params?.vehicle;
   const isEdit = !!route.params?.isEdit && !!vehicle;
 
   const [brand, setBrand] = useState(vehicle?.brand || '');
   const [model, setModel] = useState(vehicle?.model || '');
-  const [year, setYear] = useState(vehicle?.year ? String(vehicle.year) : '2023');
+  const [year, setYear] = useState(vehicle?.year ? String(vehicle.year) : String(new Date().getFullYear()));
   const [fuelType, setFuelType] = useState<FuelType>(vehicle?.fuelType || 'PETROL');
   const [registrationNumber, setRegistrationNumber] = useState(
     vehicle?.registrationNumber || ''
@@ -37,8 +40,8 @@ export const VehicleFormScreen: React.FC<Props> = ({ route, navigation }) => {
     const errs: { [key: string]: string } = {};
     if (!brand.trim()) errs.brand = 'Brand is required (e.g. Maruti, Hyundai, Tata)';
     if (!model.trim()) errs.model = 'Model is required (e.g. Swift, Creta, Nexon)';
-    if (!year.trim() || isNaN(Number(year)) || Number(year) < 1990 || Number(year) > 2027) {
-      errs.year = 'Enter a valid year between 1990 and 2026';
+    if (!year.trim() || isNaN(Number(year)) || !Number.isInteger(Number(year)) || Number(year) < 1900 || Number(year) > new Date().getFullYear() + 1) {
+      errs.year = `Enter a whole year between 1900 and ${new Date().getFullYear() + 1}`;
     }
     if (!registrationNumber.trim()) {
       errs.registrationNumber = 'Registration number is required (e.g. MH 12 AB 1234)';
@@ -48,26 +51,14 @@ export const VehicleFormScreen: React.FC<Props> = ({ route, navigation }) => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSave = () => {
-    if (!validate()) return;
-
-    const savedVehicle: Vehicle = {
-      id: vehicle?.id || `veh_${Date.now()}`,
-      userId: 'usr_1',
-      brand: brand.trim(),
-      model: model.trim(),
-      year: Number(year),
-      fuelType,
-      registrationNumber: registrationNumber.trim().toUpperCase(),
-      color: color.trim() || undefined,
-      updatedAt: new Date().toISOString(),
-    };
-
-    Alert.alert(
-      isEdit ? 'Vehicle Updated' : 'Vehicle Added',
-      `${savedVehicle.brand} ${savedVehicle.model} has been saved successfully!`,
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
+  const handleSave = async () => {
+    if (!validate() || saving) return;
+    setSaving(true);
+    try {
+      await saveVehicle({ brand: brand.trim(), model: model.trim(), year: Number(year), fuelType, registrationNumber: registrationNumber.trim().toUpperCase(), color: color.trim() || undefined }, isEdit ? vehicle?.id : undefined);
+      navigation.goBack();
+    } catch (error) { Alert.alert('Save failed', requestError(error)); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -189,6 +180,7 @@ export const VehicleFormScreen: React.FC<Props> = ({ route, navigation }) => {
           <TouchableOpacity
             style={styles.saveBtn}
             onPress={handleSave}
+            disabled={saving}
             activeOpacity={0.85}
           >
             <Text style={styles.saveBtnText}>{isEdit ? 'Update Vehicle' : 'Save Vehicle'}</Text>

@@ -80,6 +80,7 @@ export type BookingStatus =
   | 'PENDING'
   | 'CONFIRMED'
   | 'MECHANIC_ASSIGNED'
+  | 'ASSIGNED' | 'ACCEPTED' | 'EN_ROUTE' | 'ARRIVED' | 'REJECTED' | 'FAILED' | 'NO_SHOW'
   | 'IN_PROGRESS'
   | 'COMPLETED'
   | 'CANCELLED';
@@ -194,6 +195,7 @@ export interface SparePart {
 }
 
 export interface CartItem {
+  unitPrice?: number;
   id: string;
   sparePartId: string;
   sparePart: SparePart;

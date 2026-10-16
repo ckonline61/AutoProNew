@@ -21,18 +21,22 @@ export type BookingsStackParamList = {
 
 export type MarketplaceStackParamList = {
   MarketplaceMain: undefined;
+  Cart: undefined;
 };
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   VehicleForm: { vehicle?: Vehicle; isEdit?: boolean } | undefined;
   Notifications: undefined;
+  Addresses: undefined;
+  Support: undefined;
+  Account: undefined;
 };
 
 export type MainTabParamList = {
   Home: NavigatorScreenParams<HomeStackParamList>;
   Bookings: NavigatorScreenParams<BookingsStackParamList>;
-  Marketplace: undefined;
+  Marketplace: NavigatorScreenParams<MarketplaceStackParamList>;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 

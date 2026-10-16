@@ -11,8 +11,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { COLORS } from '../constants';
-import { INITIAL_VEHICLES, INITIAL_ADDRESSES } from '../data/mockData';
-import { Vehicle, Address, ServiceType, Booking } from '../types';
+import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
+import { ServiceType } from '../types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 
@@ -28,13 +28,12 @@ const TIME_SLOTS = [
 export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const { serviceId, serviceName, price } = route.params;
 
-  const [vehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
-  const [addresses] = useState<Address[]>(INITIAL_ADDRESSES);
+  const { vehicles, addresses, createBooking } = useCustomerData();
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>(vehicles[0]?.id || '');
   const [selectedAddressId, setSelectedAddressId] = useState<string>(addresses[0]?.id || '');
   const [serviceType, setServiceType] = useState<ServiceType>('DOORSTEP');
-  const [selectedDate] = useState(() => {
+  const [selectedDate, setSelectedDate] = useState(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
@@ -43,63 +42,17 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
-  const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
+  const selectedVehicle = vehicles.find((v) => v.id === (selectedVehicleId || vehicles[0]?.id));
+  const selectedAddress = addresses.find((a) => a.id === (selectedAddressId || addresses[0]?.id));
 
-  const handleConfirmBooking = () => {
-    if (!selectedVehicle) {
-      Alert.alert('Vehicle Required', 'Please select a vehicle to proceed.');
-      return;
-    }
-
+  const handleConfirmBooking = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-
-    const newBooking: Booking = {
-      id: `bk_${Date.now()}`,
-      userId: 'usr_1',
-      serviceId,
-      serviceName,
-      vehicleId: selectedVehicle.id,
-      vehicleDetails: {
-        brand: selectedVehicle.brand,
-        model: selectedVehicle.model,
-        registrationNumber: selectedVehicle.registrationNumber,
-      },
-      address: selectedAddress,
-      scheduledDate: selectedDate,
-      scheduledTime: selectedSlot,
-      serviceType,
-      status: 'CONFIRMED',
-      totalAmount: price,
-      notes: notes.trim() || undefined,
-      mechanic: {
-        id: 'mech_auto_1',
-        name: 'Auto Pro Master Technician',
-        phone: '+91 9876500000',
-        rating: 4.95,
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      Alert.alert(
-        'Booking Confirmed! 🎉',
-        `Your appointment for ${serviceName} is scheduled. A certified technician will reach out shortly.`,
-        [
-          {
-            text: 'View Booking',
-            onPress: () => {
-              navigation.replace('BookingDetail', {
-                bookingId: newBooking.id,
-                booking: newBooking,
-              });
-            },
-          },
-        ]
-      );
-    }, 600);
+    try {
+      const booking = await createBooking({ vehicleId: selectedVehicle?.id || '', serviceId, addressId: selectedAddress?.id, scheduledDate: selectedDate, scheduledTime: selectedSlot, serviceType, notes: notes.trim() || undefined });
+      navigation.replace('BookingDetail', { bookingId: booking.id, booking });
+    } catch (error) { Alert.alert('Booking failed', requestError(error)); }
+    finally { setIsSubmitting(false); }
   };
 
   return (
@@ -154,7 +107,7 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>Select Vehicle</Text>
           {vehicles.map((v) => {
-            const isSelected = v.id === selectedVehicleId;
+            const isSelected = v.id === (selectedVehicleId || vehicles[0]?.id);
             return (
               <TouchableOpacity
                 key={v.id}
@@ -180,7 +133,7 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>Service Address</Text>
           {addresses.map((a) => {
-            const isSelected = a.id === selectedAddressId;
+            const isSelected = a.id === (selectedAddressId || addresses[0]?.id);
             return (
               <TouchableOpacity
                 key={a.id}
@@ -202,6 +155,10 @@ export const BookingFormScreen: React.FC<Props> = ({ route, navigation }) => {
           })}
         </View>
 
+        <Text style={styles.sectionHeading}>Booking Date (YYYY-MM-DD)</Text>
+        <TextInput accessibilityLabel="Booking date" value={selectedDate} onChangeText={setSelectedDate} style={styles.notesInput} placeholder="YYYY-MM-DD" />
+        {vehicles.length === 0 && <Text>Add a vehicle from Profile before booking.</Text>}
+        {serviceType === 'DOORSTEP' && addresses.length === 0 && <Text>Add a service address from Profile before booking.</Text>}
         {/* Select Preferred Time Slot */}
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>Preferred Time Slot</Text>

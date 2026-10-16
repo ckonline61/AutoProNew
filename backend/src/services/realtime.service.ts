@@ -3,10 +3,14 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { logger } from '../utils/logger';
+import { User } from '../models/user.model';
+import { assertTrackingAccess } from './tracking-access';
+import { updateLocationSchema } from '../validators/mechanic.validator';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
   userRole?: string;
+  expiresAt?: number;
 }
 
 export class RealtimeService {
@@ -26,7 +30,7 @@ export class RealtimeService {
     });
 
     // JWT authentication middleware
-    this.io.use((socket: Socket, next: (err?: Error) => void) => {
+    this.io.use(async (socket: Socket, next: (err?: Error) => void) => {
       const auth = socket.handshake.auth as Record<string, unknown> | undefined;
       const query = socket.handshake.query as Record<string, unknown> | undefined;
       const token = (auth?.token || query?.token) as string | undefined;
@@ -35,10 +39,13 @@ export class RealtimeService {
         return next(new Error('Authentication token required'));
       }
       try {
-        const decoded = jwt.verify(token, config.jwt.secret) as unknown as { userId: string; role: string };
+        const decoded = jwt.verify(token, config.jwt.secret) as unknown as { userId: string; role: string; exp: number };
+        const user = await User.findById(decoded.userId);
+        if (!user?.isActive || !decoded.exp) return next(new Error('Account unavailable'));
         const authSocket = socket as AuthenticatedSocket;
         authSocket.userId = decoded.userId;
-        authSocket.userRole = decoded.role;
+        authSocket.userRole = user.role;
+        authSocket.expiresAt = decoded.exp * 1000;
         next();
       } catch {
         next(new Error('Invalid or expired token'));
@@ -48,6 +55,7 @@ export class RealtimeService {
     this.io.on('connection', (socket: Socket) => {
       const authSocket = socket as AuthenticatedSocket;
       const userId = authSocket.userId;
+      const sessionValid = () => !!userId && !!authSocket.expiresAt && Date.now() < authSocket.expiresAt;
       logger.info(`WebSocket connected: ${userId} (${socket.id})`);
 
       // Auto-join user's personal room
@@ -56,9 +64,12 @@ export class RealtimeService {
       }
 
       // Join booking room
-      socket.on('join:booking', (bookingId: string) => {
-        socket.join(`booking:${bookingId}`);
-        logger.info(`User ${userId} joined booking room: ${bookingId}`);
+      socket.on('join:booking', async (bookingId: string) => {
+        try {
+          if (!sessionValid()) throw new Error('Session expired');
+          await assertTrackingAccess(userId!, 'booking', bookingId);
+          await socket.join(`booking:${bookingId}`);
+        } catch { socket.emit('tracking:error', { message: 'Unable to access this booking' }); }
       });
 
       // Leave booking room
@@ -67,9 +78,12 @@ export class RealtimeService {
       });
 
       // Join emergency room
-      socket.on('join:emergency', (emergencyId: string) => {
-        socket.join(`emergency:${emergencyId}`);
-        logger.info(`User ${userId} joined emergency room: ${emergencyId}`);
+      socket.on('join:emergency', async (emergencyId: string) => {
+        try {
+          if (!sessionValid()) throw new Error('Session expired');
+          await assertTrackingAccess(userId!, 'emergency', emergencyId);
+          await socket.join(`emergency:${emergencyId}`);
+        } catch { socket.emit('tracking:error', { message: 'Unable to access this emergency' }); }
       });
 
       // Leave emergency room
@@ -78,26 +92,23 @@ export class RealtimeService {
       });
 
       // Provider location update (mechanic publishes location)
-      socket.on('location:update', (data: { latitude: number; longitude: number; bookingId?: string; emergencyId?: string }) => {
-        const { latitude, longitude, bookingId, emergencyId } = data;
-
-        if (bookingId) {
-          this.io?.to(`booking:${bookingId}`).emit('location:updated', {
-            userId,
-            latitude,
-            longitude,
-            timestamp: new Date().toISOString(),
-          });
-        }
-
-        if (emergencyId) {
-          this.io?.to(`emergency:${emergencyId}`).emit('location:updated', {
-            userId,
-            latitude,
-            longitude,
-            timestamp: new Date().toISOString(),
-          });
-        }
+      socket.on('location:update', async (data: { latitude: number; longitude: number; bookingId?: string; emergencyId?: string } | null) => {
+        try {
+          if (!sessionValid() || !data || Boolean(data.bookingId) === Boolean(data.emergencyId)) throw new Error('Invalid location update');
+          const location = updateLocationSchema.parse({ ...data, jobId: data.bookingId || data.emergencyId, jobType: data.bookingId ? 'booking' : 'emergency' });
+          await assertTrackingAccess(userId!, location.jobType, location.jobId, true);
+          const room = `${location.jobType}:${location.jobId}`;
+          // Recheck each recipient: a previously assigned provider must lose access after reassignment.
+          const recipients = await this.io?.in(room).fetchSockets() || [];
+          await Promise.all(recipients.map(async recipient => {
+            const local = this.io?.sockets.sockets.get(recipient.id) as AuthenticatedSocket | undefined;
+            try {
+              if (!local?.userId || !local.expiresAt || local.expiresAt <= Date.now()) throw new Error('Session expired');
+              await assertTrackingAccess(local.userId, location.jobType, location.jobId);
+              recipient.emit('location:updated', { userId, latitude: location.latitude, longitude: location.longitude, timestamp: new Date().toISOString() });
+            } catch { await recipient.leave(room); }
+          }));
+        } catch { socket.emit('tracking:error', { message: 'Location requires an assigned active journey' }); }
       });
 
       socket.on('disconnect', (reason: string) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants';
-import { SERVICE_CATEGORIES, SAMPLE_SERVICES, INITIAL_BOOKINGS } from '../data/mockData';
+import { useCustomerData } from '../contexts/CustomerDataContext';
+import { ServiceCategory } from '../types';
+import { Alert } from 'react-native';
 import { ServiceCard } from '../components/ServiceCard';
 import { EmergencyButton } from '../components/EmergencyButton';
 import { BookingCard } from '../components/BookingCard';
@@ -25,27 +27,12 @@ const CARD_WIDTH = (width - 48 - 12) / 2;
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
-  const [activeBooking] = useState(INITIAL_BOOKINGS.find((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED'));
+  const { categories, services, bookings } = useCustomerData();
+  const activeBooking = bookings.find(b => !['COMPLETED','CANCELLED','REJECTED','FAILED','NO_SHOW'].includes(b.status));
 
-  const handleCategoryPress = (category: (typeof SERVICE_CATEGORIES)[0]) => {
-    // Find matching service or fallback to first sample service
-    const matched =
-      SAMPLE_SERVICES.find((s) => s.categoryId === category.id) || {
-        id: `srv_${category.code.toLowerCase()}`,
-        categoryId: category.id,
-        categoryName: category.name,
-        name: `${category.name} Package`,
-        description: category.description,
-        price: category.startingPrice,
-        estimatedDuration: '2 - 3 hours',
-        includedFeatures: [
-          'Certified workshop inspection',
-          'OEM / OES genuine spare parts used',
-          'Free pick-up and drop available',
-          '1000 km or 1-month service warranty',
-        ],
-      };
-
+  const handleCategoryPress = (category: ServiceCategory) => {
+    const matched = services.find(s => s.categoryId === category.id);
+    if (!matched) { Alert.alert('No services available', 'This category currently has no bookable services.'); return; }
     navigation.navigate('ServiceDetail', { service: matched });
   };
 
@@ -56,6 +43,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {services.length === 0 && <Text style={{ padding: 16 }}>No services are available yet. Pull down or use Refresh to check again.</Text>}
         {/* Welcome Header */}
         <View style={styles.welcomeBanner}>
           <View style={styles.headerLeft}>
@@ -108,7 +96,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={styles.grid}>
-            {SERVICE_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <View key={cat.id} style={{ width: CARD_WIDTH }}>
                 <ServiceCard
                   name={cat.name}

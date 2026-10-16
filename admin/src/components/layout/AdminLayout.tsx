@@ -38,9 +38,11 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
       { name: 'Users', to: '/users', icon: Users },
       { name: 'Bookings', to: '/bookings', icon: Calendar },
+      { name: 'Emergency Dispatch', to: '/emergency', icon: LifeBuoy },
       { name: 'Mechanics', to: '/mechanics', icon: Wrench },
       { name: 'Payments', to: '/payments', icon: CreditCard },
       { name: 'Services', to: '/services', icon: Layers },
+      { name: 'Service Categories', to: '/service-categories', icon: Layers },
     ],
   },
   {
@@ -198,7 +200,7 @@ export const AdminLayout: React.FC = () => {
         {/* Content Outlet */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
-            <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Development preview: some modules use sample data and local-only changes. Verify API integration before operating on real records.</p>
+            <p className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">Connected administration: changes are saved to the backend. Failed requests show an error and do not become local-only successes.</p>
             <Outlet />
           </div>
         </main>
@@ -206,3 +208,4 @@ export const AdminLayout: React.FC = () => {
     </div>
   );
 };
+

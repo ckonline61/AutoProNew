@@ -33,7 +33,9 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({ currentStatus })
     );
   }
 
-  const orderIndex = STEPS.findIndex((s) => s.key === currentStatus);
+  const displayStatus = ['ASSIGNED','ACCEPTED','EN_ROUTE','ARRIVED'].includes(currentStatus) ? 'MECHANIC_ASSIGNED' : currentStatus;
+  if (['REJECTED','FAILED','NO_SHOW'].includes(currentStatus)) return <Text style={{ color: COLORS.emergency }}>Booking status: {currentStatus.replace(/_/g, ' ')}</Text>;
+  const orderIndex = STEPS.findIndex((s) => s.key === displayStatus);
   const activeIndex = orderIndex === -1 ? 0 : orderIndex;
 
   return (

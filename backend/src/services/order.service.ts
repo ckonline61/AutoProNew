@@ -1,9 +1,11 @@
 import { Types } from 'mongoose';
 import { Order, IOrder, IShippingAddress } from '../models/order.model';
+import { logger } from '../utils/logger';
+import { assertOrderTransition } from './order-fsm';
 import { Cart } from '../models/cart.model';
 import { SparePart } from '../models/spare-part.model';
 import { OrderStatus, PaymentStatus } from '../types';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../errors/app-error';
+import { BadRequestError, ForbiddenError, NotFoundError, ConflictError } from '../errors/app-error';
 
 export interface PlaceOrderAddress {
   addressLine1: string;
@@ -28,78 +30,37 @@ export class OrderService {
   /**
    * Place an order from the user's active cart.
    */
-  async placeOrder(userId: string, addressData: PlaceOrderAddress): Promise<IOrder> {
-    const cart = await Cart.findOne({ userId: new Types.ObjectId(userId) }).populate<{
-      items: Array<{
-        sparePartId: { _id: Types.ObjectId; name: string; stock: number; price: number; discountedPrice?: number };
-        quantity: number;
-        price: number;
-      }>;
-    }>('items.sparePartId');
-
-    if (!cart || cart.items.length === 0) {
-      throw new BadRequestError('Cannot place an order with an empty cart');
-    }
-
-    // Verify stock for all items first
-    for (const item of cart.items) {
-      const part = item.sparePartId;
-      if (!part) {
-        throw new BadRequestError('One or more spare parts in cart are no longer available');
+  async placeOrder(userId: string, addressData: PlaceOrderAddress, expectedTotal?: number): Promise<IOrder> {
+    const orderId = new Types.ObjectId();
+    const cart = await Cart.findOneAndUpdate({ userId: new Types.ObjectId(userId), checkoutInProgress: { $ne: true }, 'items.0': { $exists: true } }, { $set: { checkoutInProgress: true, checkoutOrderId: orderId }, $inc: { __v: 1 } }, { new: true }).populate<{ items: Array<{ sparePartId: { _id: Types.ObjectId; name: string; stock: number; price: number; discountedPrice?: number; isActive: boolean }; quantity: number; price: number }> }>('items.sparePartId');
+    if (!cart) throw new ConflictError('Cart is empty or checkout is already processing. Refresh your cart and order history.');
+    const reserved: { id: Types.ObjectId; quantity: number }[] = [];
+    let committed = false;
+    try {
+      const items = []; let subtotal = 0;
+      for (const item of cart.items) {
+        if (!item.sparePartId || item.sparePartId.isActive === false) throw new BadRequestError('A part in your cart is no longer available');
+        const part = await SparePart.findOneAndUpdate({ _id: item.sparePartId._id, isActive: true, stock: { $gte: item.quantity } }, { $inc: { stock: -item.quantity } }, { new: true });
+        if (!part) throw new BadRequestError(`Insufficient stock for ${item.sparePartId.name}`);
+        reserved.push({ id: part._id as Types.ObjectId, quantity: item.quantity });
+        const price = part.discountedPrice ?? part.price;
+        if (price !== item.price) throw new BadRequestError('A part price changed. Refresh your cart before ordering.');
+        const total = price * item.quantity; subtotal += total;
+        items.push({ sparePartId: part._id, name: part.name, quantity: item.quantity, price, total });
       }
-      if (part.stock < item.quantity) {
-        throw new BadRequestError(
-          `Insufficient stock for "${part.name}". Available: ${part.stock}, Requested: ${item.quantity}`
-        );
+      if (expectedTotal !== undefined && Math.abs(expectedTotal-subtotal) > 0.001) throw new BadRequestError('The cart total changed. Refresh and confirm the current amount.');
+      const order = await Order.create({ _id: orderId, orderNumber: this.generateOrderNumber(), userId: new Types.ObjectId(userId), items, subtotal, tax: 0, discount: 0, totalAmount: subtotal, status: OrderStatus.PLACED, shippingAddress: addressData as IShippingAddress, paymentStatus: PaymentStatus.PENDING });
+      committed = true;
+      try { await Cart.updateOne({ _id: cart._id, checkoutOrderId: orderId }, { $set: { items: [], totalAmount: 0, checkoutInProgress: false }, $unset: { checkoutOrderId: 1 }, $inc: { __v: 1 } }); }
+      catch (error) { logger.error('Order saved; cart will be finalized on next read', { orderId: orderId.toString(), error }); }
+      return order;
+    } catch (error) {
+      if (!committed) {
+        await Promise.all(reserved.map(item => SparePart.findByIdAndUpdate(item.id,{ $inc: { stock: item.quantity } })));
+        await Cart.updateOne({ _id: cart._id, checkoutOrderId: orderId }, { $set: { checkoutInProgress: false }, $unset: { checkoutOrderId: 1 }, $inc: { __v: 1 } });
       }
+      throw error;
     }
-
-    // Decrement stock for all items
-    const orderItems = [];
-    let subtotal = 0;
-
-    for (const item of cart.items) {
-      const part = item.sparePartId;
-      await SparePart.findByIdAndUpdate(part._id, {
-        $inc: { stock: -item.quantity },
-      });
-
-      const lineTotal = item.price * item.quantity;
-      subtotal += lineTotal;
-
-      orderItems.push({
-        sparePartId: part._id,
-        name: part.name,
-        quantity: item.quantity,
-        price: item.price,
-        total: lineTotal,
-      });
-    }
-
-    const tax = 0;
-    const discount = 0;
-    const totalAmount = subtotal + tax - discount;
-    const orderNumber = this.generateOrderNumber();
-
-    const order = await Order.create({
-      orderNumber,
-      userId: new Types.ObjectId(userId),
-      items: orderItems,
-      subtotal,
-      tax,
-      discount,
-      totalAmount,
-      status: OrderStatus.PLACED,
-      shippingAddress: addressData as IShippingAddress,
-      paymentStatus: PaymentStatus.PENDING,
-    });
-
-    // Clear user cart
-    cart.items = [];
-    cart.totalAmount = 0;
-    await cart.save();
-
-    return order;
   }
 
   /**
@@ -158,17 +119,20 @@ export class OrderService {
       throw new BadRequestError(`Cannot cancel order in status ${order.status}`);
     }
 
-    // Restore stock
-    for (const item of order.items) {
-      await SparePart.findByIdAndUpdate(item.sparePartId, {
-        $inc: { stock: item.quantity },
-      });
+    const cancelled = await Order.findOneAndUpdate({ _id: orderId, status: order.status }, { $set: { status: OrderStatus.CANCELLED } }, { new: true });
+    if (!cancelled) throw new ConflictError('Order changed while cancelling. Refresh and retry.');
+    const restored: { id: Types.ObjectId; quantity: number }[] = [];
+    try {
+      for (const item of order.items) {
+        await SparePart.findByIdAndUpdate(item.sparePartId,{ $inc: { stock: item.quantity } });
+        restored.push({ id: item.sparePartId, quantity: item.quantity });
+      }
+      return cancelled;
+    } catch (error) {
+      await Promise.all(restored.map(item => SparePart.findByIdAndUpdate(item.id,{ $inc: { stock: -item.quantity } })));
+      await Order.updateOne({ _id: orderId, status: OrderStatus.CANCELLED }, { $set: { status: order.status } });
+      throw error;
     }
-
-    order.status = OrderStatus.CANCELLED;
-    await order.save();
-
-    return order;
   }
 
   /**
@@ -180,10 +144,11 @@ export class OrderService {
       throw new NotFoundError('Order not found');
     }
 
-    order.status = status;
-    await order.save();
-
-    return order;
+    assertOrderTransition(order.status,status);
+    if (status === OrderStatus.CANCELLED) return this.cancelOrder(order.userId.toString(),orderId);
+    const updated = await Order.findOneAndUpdate({ _id: orderId, status: order.status }, { $set: { status } }, { new: true, runValidators: true });
+    if (!updated) throw new ConflictError('Order changed while updating. Refresh and retry.');
+    return updated;
   }
 }
 

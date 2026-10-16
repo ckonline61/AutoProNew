@@ -1,7 +1,10 @@
 import { EmergencyRequest, IEmergencyRequest } from '../models/emergency-request.model';
 import { Mechanic } from '../models/mechanic.model';
-import { EmergencyStatus, EmergencyType, MechanicApprovalStatus } from '../types';
-import { BadRequestError, NotFoundError } from '../errors/app-error';
+import { EmergencyStatus, EmergencyType, MechanicApprovalStatus, UserRole } from '../types';
+import { User } from '../models/user.model';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../errors/app-error';
+import { assertEmergencyTransition, EmergencyActor, emergencyScope } from './emergency-policy';
+import { Vehicle } from '../models/vehicle.model';
 import { CreateEmergencyRequestInput, EmergencyQueryInput } from '../validators/emergency.validator';
 
 const BASE_PRICING: Record<EmergencyType, number> = {
@@ -18,6 +21,21 @@ const BASE_PRICING: Record<EmergencyType, number> = {
 };
 
 export class EmergencyService {
+  public async assignProvider(requestId: string, providerId: string, actor: EmergencyActor): Promise<IEmergencyRequest> {
+    if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(actor.role)) throw new ForbiddenError('Administrator required');
+    const [mechanic, user] = await Promise.all([
+      Mechanic.exists({ userId: providerId, isApproved: true, approvalStatus: MechanicApprovalStatus.APPROVED, isOnline: true, isAvailable: true }),
+      User.exists({ _id: providerId, role: UserRole.MECHANIC, isActive: true }),
+    ]);
+    if (!mechanic || !user) throw new BadRequestError('Choose an active, approved and available mechanic');
+    const assigned = await EmergencyRequest.findOneAndUpdate(
+      { _id: requestId, status: { $in: [EmergencyStatus.PENDING, EmergencyStatus.SEARCHING, EmergencyStatus.REJECTED, EmergencyStatus.ASSIGNED] }, isActive: true },
+      { $set: { assignedProviderId: providerId, status: EmergencyStatus.ASSIGNED }, $push: { statusHistory: { status: EmergencyStatus.ASSIGNED, timestamp: new Date(), updatedBy: actor.id, reason: 'Dispatched by administrator' } } },
+      { new: true, runValidators: true }
+    );
+    if (!assigned) throw new ConflictError('Request is unavailable or already accepted. Refresh and retry.');
+    return assigned;
+  }
   /**
    * Generate human-readable emergency request number (e.g. EM-20261012-XXXX).
    */
@@ -98,6 +116,9 @@ export class EmergencyService {
     customerId: string,
     data: CreateEmergencyRequestInput
   ): Promise<IEmergencyRequest> {
+    if (data.vehicleId && !await Vehicle.exists({ _id: data.vehicleId, userId: customerId, isActive: true })) {
+      throw new NotFoundError('Vehicle not found or does not belong to you');
+    }
     const requestNumber = this.generateRequestNumber();
     const estimatedPrice = BASE_PRICING[data.problemType] || 499;
 
@@ -139,8 +160,9 @@ export class EmergencyService {
   /**
    * Get single emergency request by ID.
    */
-  public async getById(requestId: string): Promise<IEmergencyRequest> {
+  public async getById(requestId: string, actor: EmergencyActor): Promise<IEmergencyRequest> {
     const request = await EmergencyRequest.findOne({
+      ...emergencyScope(actor, 'read'),
       _id: requestId,
       isActive: true,
     })
@@ -228,6 +250,9 @@ export class EmergencyService {
     providerId: string,
     requestId: string
   ): Promise<IEmergencyRequest> {
+    if (!await Mechanic.exists({ userId: providerId, isApproved: true, isOnline: true, approvalStatus: MechanicApprovalStatus.APPROVED })) {
+      throw new ForbiddenError('Mechanic must be approved and online to accept requests');
+    }
     const request = await EmergencyRequest.findOne({
       _id: requestId,
       assignedProviderId: providerId,
@@ -242,15 +267,13 @@ export class EmergencyService {
       throw new BadRequestError('Request is not in ASSIGNED state');
     }
 
-    request.status = EmergencyStatus.ACCEPTED;
-    request.statusHistory.push({
-      status: EmergencyStatus.ACCEPTED,
-      timestamp: new Date(),
-      reason: 'Accepted by emergency provider',
-    });
-
-    await request.save();
-    return request;
+    const accepted = await EmergencyRequest.findOneAndUpdate(
+      { _id: requestId, assignedProviderId: providerId, status: EmergencyStatus.ASSIGNED, isActive: true },
+      { $set: { status: EmergencyStatus.ACCEPTED }, $push: { statusHistory: { status: EmergencyStatus.ACCEPTED, timestamp: new Date(), reason: 'Accepted by emergency provider' } } },
+      { new: true, runValidators: true }
+    );
+    if (!accepted) throw new ConflictError('Request changed. Refresh and retry.');
+    return accepted;
   }
 
   /**
@@ -259,9 +282,11 @@ export class EmergencyService {
   public async updateStatus(
     requestId: string,
     nextStatus: EmergencyStatus,
-    notes?: string
+    notes: string | undefined,
+    actor: EmergencyActor
   ): Promise<IEmergencyRequest> {
     const request = await EmergencyRequest.findOne({
+      ...emergencyScope(actor, 'update'),
       _id: requestId,
       isActive: true,
     });
@@ -270,19 +295,17 @@ export class EmergencyService {
       throw new NotFoundError('Emergency request not found');
     }
 
-    request.status = nextStatus;
-    if (nextStatus === EmergencyStatus.COMPLETED) {
-      request.finalPrice = request.estimatedPrice;
+    assertEmergencyTransition(request.status, nextStatus);
+    const updated = await EmergencyRequest.findOneAndUpdate(
+      { _id: requestId, ...emergencyScope(actor, 'update'), status: request.status, isActive: true },
+      { $set: { status: nextStatus, ...(nextStatus === EmergencyStatus.COMPLETED ? { finalPrice: request.estimatedPrice } : {}) }, $push: { statusHistory: { status: nextStatus, timestamp: new Date(), updatedBy: actor.id, reason: notes || `Status updated to ${nextStatus}` } } },
+      { new: true, runValidators: true }
+    );
+    if (!updated) throw new ConflictError('Request changed. Refresh and retry.');
+    if (![EmergencyStatus.EN_ROUTE, EmergencyStatus.ARRIVED].includes(nextStatus) && updated.assignedProviderId) {
+      await Mechanic.updateOne({ userId: updated.assignedProviderId }, { $unset: { currentLocation: 1 } });
     }
-
-    request.statusHistory.push({
-      status: nextStatus,
-      timestamp: new Date(),
-      reason: notes || `Status updated to ${nextStatus}`,
-    });
-
-    await request.save();
-    return request;
+    return updated;
   }
 
   /**
@@ -291,9 +314,11 @@ export class EmergencyService {
   public async cancel(
     requestId: string,
     cancelledBy: string,
-    reason: string
+    reason: string,
+    actor: EmergencyActor
   ): Promise<IEmergencyRequest> {
     const request = await EmergencyRequest.findOne({
+      ...emergencyScope(actor, 'cancel'),
       _id: requestId,
       isActive: true,
     });
@@ -302,24 +327,15 @@ export class EmergencyService {
       throw new NotFoundError('Emergency request not found');
     }
 
-    if (
-      request.status === EmergencyStatus.COMPLETED ||
-      request.status === EmergencyStatus.CANCELLED
-    ) {
-      throw new BadRequestError('Cannot cancel a completed or already cancelled request');
-    }
-
-    request.status = EmergencyStatus.CANCELLED;
-    request.cancelledBy = cancelledBy;
-    request.cancellationReason = reason;
-    request.statusHistory.push({
-      status: EmergencyStatus.CANCELLED,
-      timestamp: new Date(),
-      reason,
-    });
-
-    await request.save();
-    return request;
+    assertEmergencyTransition(request.status, EmergencyStatus.CANCELLED);
+    const cancelled = await EmergencyRequest.findOneAndUpdate(
+      { _id: requestId, ...emergencyScope(actor, 'cancel'), status: request.status, isActive: true },
+      { $set: { status: EmergencyStatus.CANCELLED, cancelledBy, cancellationReason: reason }, $push: { statusHistory: { status: EmergencyStatus.CANCELLED, timestamp: new Date(), updatedBy: actor.id, reason } } },
+      { new: true, runValidators: true }
+    );
+    if (!cancelled) throw new ConflictError('Request changed. Refresh and retry.');
+    if (cancelled.assignedProviderId) await Mechanic.updateOne({ userId: cancelled.assignedProviderId }, { $unset: { currentLocation: 1 } });
+    return cancelled;
   }
 }
 

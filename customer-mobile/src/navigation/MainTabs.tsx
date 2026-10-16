@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
 import { HomeStack } from './HomeStack';
 import { BookingsStack } from './BookingsStack';
-import { MarketplaceScreen } from '../screens/MarketplaceScreen';
+import { MarketplaceStack } from './MarketplaceStack';
 import { ProfileStack } from './ProfileStack';
 import { COLORS } from '../constants';
 
@@ -44,7 +44,7 @@ export const MainTabs: React.FC = () => {
       />
       <Tab.Screen
         name="Marketplace"
-        component={MarketplaceScreen}
+        component={MarketplaceStack}
         options={{
           tabBarLabel: 'Marketplace',
           tabBarIcon: ({ focused }) => (

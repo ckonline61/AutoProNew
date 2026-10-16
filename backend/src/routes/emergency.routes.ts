@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { emergencyController } from '../controllers/emergency.controller';
-import { authenticate } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
+import { UserRole } from '../types';
 import { validate } from '../middleware/validate';
 import { idParamSchema } from '../validators/common';
 import {
@@ -21,7 +22,7 @@ router.use(authenticate);
  * POST /api/v1/emergency
  * Create rapid SOS roadside assistance request.
  */
-router.post('/', validate(createEmergencyRequestSchema), emergencyController.createSOS);
+router.post('/', authorize(UserRole.CUSTOMER), validate(createEmergencyRequestSchema), emergencyController.createSOS);
 
 /**
  * GET /api/v1/emergency
@@ -33,7 +34,7 @@ router.get('/', validate(emergencyQuerySchema, 'query'), emergencyController.get
  * GET /api/v1/emergency/assigned
  * Get emergency requests dispatched to provider.
  */
-router.get('/assigned', emergencyController.getProviderRequests);
+router.get('/assigned', authorize(UserRole.MECHANIC), emergencyController.getProviderRequests);
 
 /**
  * GET /api/v1/emergency/:id
@@ -45,7 +46,7 @@ router.get('/:id', validate(idParamSchema, 'params'), emergencyController.getByI
  * POST /api/v1/emergency/:id/accept
  * Provider accepts emergency request.
  */
-router.post('/:id/accept', validate(idParamSchema, 'params'), emergencyController.acceptRequest);
+router.post('/:id/accept', authorize(UserRole.MECHANIC), validate(idParamSchema, 'params'), emergencyController.acceptRequest);
 
 /**
  * PUT /api/v1/emergency/:id/status
@@ -53,6 +54,7 @@ router.post('/:id/accept', validate(idParamSchema, 'params'), emergencyControlle
  */
 router.put(
   '/:id/status',
+  authorize(UserRole.MECHANIC, UserRole.ADMIN, UserRole.SUPER_ADMIN),
   validate(idParamSchema, 'params'),
   validate(updateEmergencyStatusSchema),
   emergencyController.updateStatus

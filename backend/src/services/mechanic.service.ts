@@ -1,8 +1,9 @@
 import { Mechanic, IMechanic } from '../models/mechanic.model';
 import { Booking, IBooking } from '../models/booking.model';
 import { User } from '../models/user.model';
+import { EmergencyRequest } from '../models/emergency-request.model';
 import { BookingFsm } from './booking-fsm';
-import { BookingStatus, MechanicApprovalStatus, UserRole } from '../types';
+import { BookingStatus, EmergencyStatus, MechanicApprovalStatus, UserRole } from '../types';
 import {
   BadRequestError,
   ConflictError,
@@ -30,10 +31,8 @@ export class MechanicService {
       throw new NotFoundError('User not found');
     }
 
-    // Update user role to MECHANIC if not already
     if (user.role !== UserRole.MECHANIC) {
-      user.role = UserRole.MECHANIC;
-      await user.save();
+      throw new ForbiddenError('A mechanic account is required for onboarding');
     }
 
     const mechanic = await Mechanic.create({
@@ -87,7 +86,8 @@ export class MechanicService {
     }
 
     mechanic.isOnline = data.isOnline;
-    mechanic.isAvailable = data.isAvailable !== undefined ? data.isAvailable : data.isOnline;
+    mechanic.isAvailable = data.isOnline && (data.isAvailable ?? true);
+    if (!data.isOnline) mechanic.currentLocation = undefined;
     await mechanic.save();
 
     return mechanic;
@@ -105,6 +105,14 @@ export class MechanicService {
       throw new NotFoundError('Mechanic profile not found');
     }
 
+    if (!mechanic.isApproved || mechanic.approvalStatus !== MechanicApprovalStatus.APPROVED) {
+      throw new ForbiddenError('Mechanic must be approved to share location');
+    }
+    const activeFilter = { _id: data.jobId, isActive: true, status: { $in: [BookingStatus.EN_ROUTE, BookingStatus.ARRIVED] } };
+    const job = data.jobType === 'booking'
+      ? await Booking.exists({ ...activeFilter, mechanicId: userId })
+      : await EmergencyRequest.exists({ ...activeFilter, assignedProviderId: userId, status: { $in: [EmergencyStatus.EN_ROUTE, EmergencyStatus.ARRIVED] } });
+    if (!job) throw new ForbiddenError('Location sharing requires your assigned active journey');
     mechanic.currentLocation = {
       latitude: data.latitude,
       longitude: data.longitude,
@@ -132,6 +140,7 @@ export class MechanicService {
     if (!mechanic.isApproved) {
       mechanic.isOnline = false;
       mechanic.isAvailable = false;
+      mechanic.currentLocation = undefined;
     }
     await mechanic.save();
 
@@ -149,7 +158,7 @@ export class MechanicService {
 
     return Booking.find({
       mechanicId: userId,
-      status: { $in: [BookingStatus.ASSIGNED, BookingStatus.ACCEPTED] },
+      status: { $in: [BookingStatus.ASSIGNED, BookingStatus.ACCEPTED, BookingStatus.EN_ROUTE, BookingStatus.ARRIVED, BookingStatus.IN_PROGRESS] },
       isActive: true,
     })
       .populate('vehicleId', 'brand model registrationNumber year')
@@ -180,15 +189,7 @@ export class MechanicService {
 
     BookingFsm.assertTransition(booking.status, BookingStatus.ACCEPTED);
 
-    booking.status = BookingStatus.ACCEPTED;
-    booking.statusHistory.push({
-      status: BookingStatus.ACCEPTED,
-      timestamp: new Date(),
-      reason: 'Job accepted by mechanic',
-    });
-
-    await booking.save();
-    return booking;
+    return this.transitionJob(userId, bookingId, booking.status, BookingStatus.ACCEPTED, 'Job accepted by mechanic');
   }
 
   /**
@@ -213,15 +214,7 @@ export class MechanicService {
       throw new BadRequestError('Only assigned jobs can be rejected');
     }
 
-    booking.status = BookingStatus.REJECTED;
-    booking.statusHistory.push({
-      status: BookingStatus.REJECTED,
-      timestamp: new Date(),
-      reason: reason || 'Job rejected by mechanic',
-    });
-
-    await booking.save();
-    return booking;
+    return this.transitionJob(userId, bookingId, booking.status, BookingStatus.REJECTED, reason || 'Job rejected by mechanic');
   }
 
   /**
@@ -267,18 +260,12 @@ export class MechanicService {
 
     BookingFsm.assertTransition(booking.status, nextStatus);
 
-    booking.status = nextStatus;
-    if (nextStatus === BookingStatus.COMPLETED) {
-      booking.finalPrice = booking.estimatedPrice;
+    const updated = await this.transitionJob(userId, bookingId, booking.status, nextStatus,
+      notes || `Status updated to ${nextStatus} by mechanic`,
+      nextStatus === BookingStatus.COMPLETED ? booking.estimatedPrice : undefined);
+    if (![BookingStatus.EN_ROUTE, BookingStatus.ARRIVED].includes(nextStatus)) {
+      await Mechanic.updateOne({ userId }, { $unset: { currentLocation: 1 } });
     }
-
-    booking.statusHistory.push({
-      status: nextStatus,
-      timestamp: new Date(),
-      reason: notes || `Status updated to ${nextStatus} by mechanic`,
-    });
-
-    await booking.save();
 
     // If completed, update mechanic metrics
     if (nextStatus === BookingStatus.COMPLETED) {
@@ -287,13 +274,23 @@ export class MechanicService {
         {
           $inc: {
             totalJobs: 1,
-            totalEarnings: booking.finalPrice || booking.estimatedPrice,
+            totalEarnings: updated.finalPrice ?? updated.estimatedPrice,
           },
         }
       );
     }
 
-    return booking;
+    return updated;
+  }
+
+  private async transitionJob(userId: string, bookingId: string, current: BookingStatus, next: BookingStatus, reason: string, finalPrice?: number): Promise<IBooking> {
+    const updated = await Booking.findOneAndUpdate(
+      { _id: bookingId, mechanicId: userId, status: current, isActive: true },
+      { $set: { status: next, ...(finalPrice !== undefined ? { finalPrice } : {}) }, $push: { statusHistory: { status: next, timestamp: new Date(), reason } } },
+      { new: true, runValidators: true }
+    );
+    if (!updated) throw new ConflictError('Booking changed. Refresh and retry.');
+    return updated;
   }
 }
 

@@ -2,8 +2,10 @@
   "compilerOptions": {
     "target": "esnext",
     "ignoreDeprecations": "6.0",
-    "module": "commonjs",
-    "lib": ["es2022"],
+    "module": "esnext",
+    "lib": [
+      "es2022"
+    ],
     "jsx": "react-native",
     "strict": true,
     "esModuleInterop": true,
@@ -11,17 +13,30 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["jest", "node"],
+    "types": [
+      "jest",
+      "node"
+    ],
     "noEmit": true,
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js"
+  ],
+  "extends": "expo/tsconfig.base"
 }

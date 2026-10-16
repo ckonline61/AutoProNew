@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { emailSchema, passwordSchema, phoneSchema } from './common';
+import { UserRole } from '../types';
 
 /**
  * Zod validation schema for user registration.
  */
 export const registerSchema = z.object({
+  role: z.enum([UserRole.CUSTOMER,UserRole.MECHANIC]).optional(),
   name: z
     .string()
     .trim()

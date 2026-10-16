@@ -10,6 +10,7 @@ import {
   updateLocationSchema,
   verifyMechanicSchema,
   updateJobExecutionStatusSchema,
+  rejectJobSchema,
 } from '../validators/mechanic.validator';
 
 const router = Router();
@@ -23,13 +24,13 @@ router.use(authenticate);
  * POST /api/v1/mechanics/onboard
  * Submit mechanic onboarding details.
  */
-router.post('/onboard', validate(onboardMechanicSchema), mechanicController.onboard);
+router.post('/onboard', authorize(UserRole.MECHANIC), validate(onboardMechanicSchema), mechanicController.onboard);
 
 /**
  * GET /api/v1/mechanics/profile
  * Get mechanic profile.
  */
-router.get('/profile', mechanicController.getProfile);
+router.get('/profile', authorize(UserRole.MECHANIC), mechanicController.getProfile);
 
 /**
  * PUT /api/v1/mechanics/availability
@@ -37,6 +38,7 @@ router.get('/profile', mechanicController.getProfile);
  */
 router.put(
   '/availability',
+  authorize(UserRole.MECHANIC),
   validate(updateAvailabilitySchema),
   mechanicController.updateAvailability
 );
@@ -47,6 +49,7 @@ router.put(
  */
 router.put(
   '/location',
+  authorize(UserRole.MECHANIC),
   validate(updateLocationSchema),
   mechanicController.updateLocation
 );
@@ -55,13 +58,13 @@ router.put(
  * GET /api/v1/mechanics/jobs
  * List jobs assigned to this mechanic.
  */
-router.get('/jobs', mechanicController.getAssignedJobs);
+router.get('/jobs', authorize(UserRole.MECHANIC), mechanicController.getAssignedJobs);
 
 /**
  * GET /api/v1/mechanics/jobs/active
  * Get current active in-progress job.
  */
-router.get('/jobs/active', mechanicController.getActiveJob);
+router.get('/jobs/active', authorize(UserRole.MECHANIC), mechanicController.getActiveJob);
 
 /**
  * POST /api/v1/mechanics/jobs/:id/accept
@@ -69,6 +72,7 @@ router.get('/jobs/active', mechanicController.getActiveJob);
  */
 router.post(
   '/jobs/:id/accept',
+  authorize(UserRole.MECHANIC),
   validate(idParamSchema, 'params'),
   mechanicController.acceptJob
 );
@@ -79,7 +83,9 @@ router.post(
  */
 router.post(
   '/jobs/:id/reject',
+  authorize(UserRole.MECHANIC),
   validate(idParamSchema, 'params'),
+  validate(rejectJobSchema),
   mechanicController.rejectJob
 );
 
@@ -89,6 +95,7 @@ router.post(
  */
 router.put(
   '/jobs/:id/status',
+  authorize(UserRole.MECHANIC),
   validate(idParamSchema, 'params'),
   validate(updateJobExecutionStatusSchema),
   mechanicController.updateJobStatus

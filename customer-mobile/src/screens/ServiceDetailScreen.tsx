@@ -9,8 +9,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { COLORS } from '../constants';
-import { Service } from '../types';
-import { SAMPLE_SERVICES } from '../data/mockData';
+import { useCustomerData } from '../contexts/CustomerDataContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 
@@ -19,27 +18,9 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'ServiceDetail'>;
 export const ServiceDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const serviceParams = route.params;
 
-  let service: Service;
-  if ('service' in serviceParams) {
-    service = serviceParams.service;
-  } else {
-    const found = SAMPLE_SERVICES.find((s) => s.id === serviceParams.serviceId);
-    service = found || {
-      id: serviceParams.serviceId,
-      categoryId: 'cat_custom',
-      categoryName: serviceParams.serviceName || 'Custom Service',
-      name: serviceParams.serviceName || 'Auto Pro Service',
-      description: serviceParams.description || 'Comprehensive multi-point service and inspection.',
-      price: serviceParams.price || 1999,
-      estimatedDuration: '2 - 3 hours',
-      includedFeatures: [
-        'Dedicated certified auto mechanic',
-        'Genuine parts and manufacturer grade fluids',
-        'Free doorstep pickup and delivery',
-        '30-day warranty coverage',
-      ],
-    };
-  }
+  const { services } = useCustomerData();
+  const service = 'service' in serviceParams ? serviceParams.service : services.find(s => s.id === serviceParams.serviceId);
+  if (!service) return <View style={{ padding: 24 }}><Text>This service is no longer available. Refresh the service catalogue.</Text></View>;
 
   const handleBookNow = () => {
     navigation.navigate('BookingForm', {

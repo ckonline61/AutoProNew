@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import api from '../config/api';
 import { STORAGE_KEYS } from '../constants';
 import { User, UserRole } from '../types';
+import { sessionEvents } from '../services/session-events';
 
 interface AuthContextType {
   user: User | null;
@@ -45,7 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (storedToken) {
         const response = await api.get('/auth/me');
         setUser(customerUser(response.data?.data));
-        setToken(storedToken);
+        setToken(await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || storedToken);
       }
     } catch {
       await clearSession();
@@ -54,6 +55,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   useEffect(() => { void loadStoredToken(); }, []);
+  useEffect(() => sessionEvents.subscribe(event => {
+    if (event.type === 'refreshed') setToken(event.accessToken);
+    else { setToken(null); setUser(null); setIsPreview(false); }
+  }), []);
   const enterPreview = () => {
     if (!__DEV__) return;
     setIsPreview(true);

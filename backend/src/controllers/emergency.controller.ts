@@ -4,6 +4,12 @@ import { apiResponse } from '../utils/api-response';
 import { emergencyService } from '../services/emergency.service';
 import { UnauthorizedError } from '../errors/app-error';
 import { EmergencyQueryInput } from '../validators/emergency.validator';
+import { EmergencyActor } from '../services/emergency-policy';
+
+function actor(req: Request): EmergencyActor {
+  if (!req.user) throw new UnauthorizedError('User is not authenticated');
+  return { id: req.user._id.toString(), role: req.user.role };
+}
 
 export const emergencyController = {
   /**
@@ -23,7 +29,7 @@ export const emergencyController = {
    * Get single emergency request by ID.
    */
   getById: asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const request = await emergencyService.getById(req.params.id as string);
+    const request = await emergencyService.getById(req.params.id as string, actor(req));
     res.status(200).json(apiResponse.success(request, 'Emergency request retrieved successfully'));
   }),
 
@@ -82,7 +88,8 @@ export const emergencyController = {
     const request = await emergencyService.updateStatus(
       req.params.id as string,
       req.body.status,
-      req.body.notes
+      req.body.notes,
+      actor(req)
     );
     res.status(200).json(apiResponse.success(request, 'Status updated successfully'));
   }),
@@ -95,7 +102,8 @@ export const emergencyController = {
     const request = await emergencyService.cancel(
       req.params.id as string,
       cancelledBy,
-      req.body.reason
+      req.body.reason,
+      actor(req)
     );
     res.status(200).json(apiResponse.success(request, 'Emergency request cancelled successfully'));
   }),

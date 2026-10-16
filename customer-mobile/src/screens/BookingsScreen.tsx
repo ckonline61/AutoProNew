@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants';
 import { BookingCard } from '../components/BookingCard';
-import { INITIAL_BOOKINGS } from '../data/mockData';
+import { useCustomerData } from '../contexts/CustomerDataContext';
 import { Booking } from '../types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BookingsStackParamList } from '../navigation/types';
@@ -19,13 +19,13 @@ type Props = NativeStackScreenProps<BookingsStackParamList, 'BookingsMain'>;
 
 export const BookingsScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
-  const [bookings] = useState<Booking[]>(INITIAL_BOOKINGS);
+  const { bookings, loading, refresh } = useCustomerData();
 
   const activeBookings = bookings.filter(
-    (b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED'
+    (b) => !['COMPLETED','CANCELLED','REJECTED','FAILED','NO_SHOW'].includes(b.status)
   );
   const historyBookings = bookings.filter(
-    (b) => b.status === 'COMPLETED' || b.status === 'CANCELLED'
+    (b) => ['COMPLETED','CANCELLED','REJECTED','FAILED','NO_SHOW'].includes(b.status)
   );
 
   const displayedList = selectedTab === 'ACTIVE' ? activeBookings : historyBookings;
@@ -71,6 +71,8 @@ export const BookingsScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <FlatList
+        refreshing={loading}
+        onRefresh={() => void refresh()}
         data={displayedList}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}

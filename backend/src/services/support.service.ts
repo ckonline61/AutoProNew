@@ -5,8 +5,9 @@ import {
   TicketCategory,
   TicketStatus,
 } from '../models/support-ticket.model';
-import { Priority } from '../types';
-import { NotFoundError, ForbiddenError } from '../errors/app-error';
+import { Priority, UserRole } from '../types';
+import { NotFoundError, ForbiddenError, BadRequestError } from '../errors/app-error';
+import { User } from '../models/user.model';
 
 export interface CreateTicketDTO {
   subject: string;
@@ -230,6 +231,7 @@ export const supportService = {
    * Admin: Assign a ticket to a support staff / admin.
    */
   async assignTicket(ticketId: string, assignedTo: string): Promise<ISupportTicket> {
+    if (!await User.exists({ _id: assignedTo, isActive: true, role: { $in: [UserRole.ADMIN,UserRole.SUPER_ADMIN] } })) throw new BadRequestError('Choose an active support administrator');
     const ticket = await SupportTicket.findById(ticketId);
     if (!ticket) {
       throw new NotFoundError('Support ticket not found');

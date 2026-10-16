@@ -11,31 +11,31 @@ import {
   Alert,
 } from 'react-native';
 import { COLORS } from '../constants';
-import { SAMPLE_SPARE_PARTS, SAMPLE_USED_CARS } from '../data/mockData';
+import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { SparePart, UsedCarListing } from '../types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { MarketplaceStackParamList } from '../navigation/types';
 
 const { width } = Dimensions.get('window');
 const PART_WIDTH = (width - 44) / 2;
 
-export const MarketplaceScreen: React.FC = () => {
+export const MarketplaceScreen: React.FC<NativeStackScreenProps<MarketplaceStackParamList, 'MarketplaceMain'>> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<'PARTS' | 'CARS'>('PARTS');
-  const [spareParts] = useState<SparePart[]>(SAMPLE_SPARE_PARTS);
-  const [usedCars] = useState<UsedCarListing[]>(SAMPLE_USED_CARS);
+  const { spareParts, usedCars, addPart, loading, refresh, cart } = useCustomerData();
+  const { isPreview } = useAuth();
 
-  const handleBuyPart = (part: SparePart) => {
-    Alert.alert(
-      'Added to Cart',
-      `${part.name} added to your cart for ₹${part.price}. Instant delivery available.`,
-      [{ text: 'OK' }]
-    );
+  const handleBuyPart = async (part: SparePart) => {
+    try { await addPart(part); Alert.alert(isPreview ? 'Preview cart' : 'Added to cart', `${part.name} added. No order or payment has been placed.`); }
+    catch (error) { Alert.alert('Unable to add part', requestError(error)); }
   };
 
   const handleViewCar = (car: UsedCarListing) => {
     Alert.alert(
       `${car.brand} ${car.model}`,
-      `Year: ${car.year}\nPrice: ₹${car.price.toLocaleString()}\nMileage: ${car.mileage.toLocaleString()} km\nInspection Score: ${car.inspectionScore || 9}/10\nLocation: ${car.location}`,
+      `Year: ${car.year}\nPrice: ₹${car.price.toLocaleString()}\nMileage: ${car.mileage.toLocaleString()} km\nInspection Score: ${car.inspectionScore ?? 'Not available'}\nLocation: ${car.location}`,
       [
-        { text: 'Book Test Drive', onPress: () => Alert.alert('Test Drive Booked', 'Our advisor will contact you to schedule!') },
+        { text: 'Close', style: 'cancel' },
         { text: 'Close', style: 'cancel' },
       ]
     );
@@ -48,6 +48,7 @@ export const MarketplaceScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.title}>Marketplace</Text>
         <Text style={styles.subtitle}>Genuine spare parts & certified pre-owned cars</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Cart')}><Text style={{ color: COLORS.primary, paddingVertical: 10 }}>View Cart & Orders ({cart.reduce((sum,item) => sum + item.quantity, 0)})</Text></TouchableOpacity>
 
         {/* Tab Switcher */}
         <View style={styles.tabContainer}>
@@ -75,6 +76,8 @@ export const MarketplaceScreen: React.FC = () => {
 
       {activeTab === 'PARTS' ? (
         <FlatList
+          refreshing={loading}
+          onRefresh={() => void refresh()}
           data={spareParts}
           keyExtractor={(item) => item.id}
           numColumns={2}
@@ -97,16 +100,19 @@ export const MarketplaceScreen: React.FC = () => {
               </View>
               <TouchableOpacity
                 style={styles.addToCartBtn}
+                disabled={item.stock < 1}
                 onPress={() => handleBuyPart(item)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.addToCartText}>+ Add to Cart</Text>
+                <Text style={styles.addToCartText}>{item.stock < 1 ? 'Out of stock' : '+ Add to Cart'}</Text>
               </TouchableOpacity>
             </View>
           )}
         />
       ) : (
         <FlatList
+          refreshing={loading}
+          onRefresh={() => void refresh()}
           data={usedCars}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.carsList}
@@ -145,7 +151,7 @@ export const MarketplaceScreen: React.FC = () => {
                   <Text style={styles.carPrice}>₹{(item.price / 100000).toFixed(2)} Lakh</Text>
                 </View>
                 <View style={styles.inspectionBadge}>
-                  <Text style={styles.inspectionScore}>⭐ {item.inspectionScore || '9.2'}/10</Text>
+                  <Text style={styles.inspectionScore}>{item.inspectionScore != null ? `⭐ ${item.inspectionScore}/10` : 'No score available'}</Text>
                   <Text style={styles.inspectionLabel}>Inspection</Text>
                 </View>
               </View>

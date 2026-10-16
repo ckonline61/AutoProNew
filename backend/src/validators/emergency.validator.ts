@@ -17,7 +17,7 @@ export const cancelEmergencyRequestSchema = z.object({
 });
 
 export const updateEmergencyStatusSchema = z.object({
-  status: z.nativeEnum(EmergencyStatus),
+  status: z.enum([EmergencyStatus.EN_ROUTE, EmergencyStatus.ARRIVED, EmergencyStatus.IN_PROGRESS, EmergencyStatus.COMPLETED, EmergencyStatus.FAILED]),
   notes: z.string().trim().max(1000).optional(),
 });
 
