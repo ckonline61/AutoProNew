@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -14,6 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
+
+const LOGO_IMAGE = require('../../assets/logo.jpg');
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 
@@ -73,9 +76,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* AP Logo */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>AP</Text>
-          </View>
+          <Image source={LOGO_IMAGE} style={styles.logoImage} resizeMode="contain" />
         </View>
 
         {/* Heading */}
@@ -241,19 +242,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.lg,
   },
-  logoCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.white,
-    letterSpacing: 1,
+  logoImage: {
+    width: 64,
+    height: 64,
   },
   title: {
     fontSize: 26,

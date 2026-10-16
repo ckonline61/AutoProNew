@@ -13,6 +13,9 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
+
+const LOGO_IMAGE = require('../../assets/logo.jpg');
+
 import { useCustomerData } from '../contexts/CustomerDataContext';
 import { ServiceCategory } from '../types';
 import { Alert } from 'react-native';
@@ -73,9 +76,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
           <View style={styles.headerCenter}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>AP</Text>
-            </View>
+            <Image source={LOGO_IMAGE} style={styles.logoImage} resizeMode="contain" />
           </View>
           <TouchableOpacity
             style={styles.headerRight}
@@ -258,19 +259,9 @@ const styles = StyleSheet.create({
   headerCenter: {
     alignItems: 'center',
   },
-  logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  logoImage: {
+    width: 40,
+    height: 40,
   },
   headerRight: {
     flex: 1,

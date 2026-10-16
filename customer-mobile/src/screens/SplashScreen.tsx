@@ -2,11 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   Animated,
   StatusBar,
 } from 'react-native';
 import { COLORS } from '../theme';
+
+const LOGO_IMAGE = require('../../assets/logo.jpg');
 
 export interface SplashScreenProps {
   onComplete: () => void;
@@ -50,10 +53,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           },
         ]}
       >
-        {/* Red circle (80px) with white "AP" text (bold, 28px) */}
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>AP</Text>
-        </View>
+        {/* Brand logo image */}
+        <Image source={LOGO_IMAGE} style={styles.logoImage} resizeMode="contain" />
 
         {/* "AUTO PRO" in white, 24px bold, letter-spacing 3 */}
         <Text style={styles.brandTitle}>AUTO PRO</Text>
@@ -76,25 +77,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+  logoImage: {
+    width: 130,
+    height: 130,
     marginBottom: 20,
-  },
-  logoText: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
   brandTitle: {
     color: '#FFFFFF',

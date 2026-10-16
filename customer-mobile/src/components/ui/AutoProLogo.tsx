@@ -1,13 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, Image, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../../theme';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const LOGO_IMAGE = require('../../../assets/logo.jpg');
+
 export interface AutoProLogoProps {
-  /** Size variant: sm (32px), md (48px), lg (80px) */
-  size?: 'sm' | 'md' | 'lg';
-  /** Optional tagline shown below or next to the brand name */
+  /** Size variant: sm (32px), md (48px), lg (80px), xl (120px) */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Optional tagline shown below the brand name */
   tagline?: string;
-  /** Whether to show the "AUTO PRO" text next to / under the emblem */
+  /** Whether to show the "AUTO PRO" text next to / under the logo */
   showBrandName?: boolean;
   /** Layout direction: horizontal (typical in headers) or vertical (splash / auth) */
   layout?: 'horizontal' | 'vertical';
@@ -19,24 +22,27 @@ export interface AutoProLogoProps {
 
 const SIZE_CONFIG = {
   sm: {
-    circle: 32,
-    fontSize: 14,
-    titleSize: 16,
+    imageSize: 36,
+    titleSize: 14,
     taglineSize: 10,
-    gap: SPACING.sm,
+    gap: SPACING.xs,
   },
   md: {
-    circle: 48,
-    fontSize: 20,
-    titleSize: 20,
+    imageSize: 52,
+    titleSize: 18,
     taglineSize: 11,
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
   lg: {
-    circle: 80,
-    fontSize: 34,
-    titleSize: 26,
+    imageSize: 90,
+    titleSize: 24,
     taglineSize: 13,
+    gap: SPACING.md,
+  },
+  xl: {
+    imageSize: 130,
+    titleSize: 28,
+    taglineSize: 14,
     gap: SPACING.md,
   },
 };
@@ -50,8 +56,8 @@ const AutoProLogo: React.FC<AutoProLogoProps> = ({
   style,
 }) => {
   const config = SIZE_CONFIG[size];
-  const isVertical = layout ? layout === 'vertical' : size === 'lg';
-  const shouldShowText = showBrandName !== undefined ? showBrandName : !!tagline || size === 'lg';
+  const isVertical = layout ? layout === 'vertical' : size === 'lg' || size === 'xl';
+  const shouldShowText = showBrandName !== undefined ? showBrandName : !!tagline || size === 'lg' || size === 'xl';
 
   return (
     <View
@@ -64,19 +70,15 @@ const AutoProLogo: React.FC<AutoProLogoProps> = ({
       accessibilityRole="image"
       accessibilityLabel={`Auto Pro Logo${tagline ? ` - ${tagline}` : ''}`}
     >
-      {/* Red emblem circle with white "AP" letters */}
-      <View
-        style={[
-          styles.emblem,
-          {
-            width: config.circle,
-            height: config.circle,
-            borderRadius: config.circle / 2,
-          },
-        ]}
-      >
-        <Text style={[styles.emblemText, { fontSize: config.fontSize }]}>AP</Text>
-      </View>
+      {/* Actual brand logo image */}
+      <Image
+        source={LOGO_IMAGE}
+        style={{
+          width: config.imageSize,
+          height: config.imageSize,
+        }}
+        resizeMode="contain"
+      />
 
       {/* Brand title + optional tagline */}
       {shouldShowText && (
@@ -115,17 +117,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emblem: {
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  emblemText: {
-    color: COLORS.white,
-    fontWeight: '800',
-    letterSpacing: 0.5,
   },
   horizontalTextGroup: {
     justifyContent: 'center',

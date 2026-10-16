@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -19,6 +20,7 @@ import { COLORS as CONST_COLORS } from '../constants';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 
+const LOGO_IMAGE = require('../../assets/logo.jpg');
 type Props = Partial<NativeStackScreenProps<AuthStackParamList, 'Login'>> & {
   navigation?: any;
 };
@@ -125,9 +127,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       >
         {/* Top Header: Auto Pro logo (red circle with white AP, 64px) */}
         <View style={styles.header}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>AP</Text>
-          </View>
+          <Image source={LOGO_IMAGE} style={styles.logoImage} resizeMode="contain" />
           <Text style={styles.welcomeText}>Welcome to</Text>
           <Text style={styles.brandTitle}>Auto Pro</Text>
         </View>
@@ -405,21 +405,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.xl,
   },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.md,
+  logoImage: {
+    width: 72,
+    height: 72,
     marginBottom: SPACING.md,
-  },
-  logoText: {
-    color: COLORS.white,
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
   welcomeText: {
     fontSize: 14,

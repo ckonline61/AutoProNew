@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   FlatList,
   SafeAreaView,
@@ -10,6 +11,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const LOGO_IMAGE = require('../../assets/logo.jpg');
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { Badge, Card, TabPills, TabPillItem, PriceText } from '../components/ui';
 import { useCustomerData } from '../contexts/CustomerDataContext';
@@ -227,10 +230,8 @@ export const BookingsScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Screen Header */}
       <View style={styles.header}>
-        {/* Left: AP Logo circle */}
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>AP</Text>
-        </View>
+        {/* Left: AP Logo */}
+        <Image source={LOGO_IMAGE} style={styles.logoImage} resizeMode="contain" />
 
         {/* Center: Title */}
         <View style={styles.headerCenter}>
@@ -299,20 +300,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
   },
-  logoCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  logoText: {
-    color: COLORS.white,
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  logoImage: {
+    width: 42,
+    height: 42,
   },
   headerCenter: {
     flex: 1,
