@@ -2,7 +2,11 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BookingsStackParamList } from './types';
 import { BookingsScreen, BookingDetailScreen } from '../screens';
-import { COLORS } from '../constants';
+import { PaymentCheckoutScreen } from '../screens/PaymentCheckoutScreen';
+import { InvoiceDetailScreen } from '../screens/InvoiceDetailScreen';
+import { LiveTrackingScreen } from '../screens/LiveTrackingScreen';
+import { ReviewScreen } from '../screens/ReviewScreen';
+import { COLORS } from '../theme';
 
 const Stack = createNativeStackNavigator<BookingsStackParamList>();
 
@@ -11,22 +15,16 @@ export const BookingsStack: React.FC = () => {
     <Stack.Navigator
       initialRouteName="BookingsMain"
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.cardBackground },
-        headerTintColor: COLORS.text,
-        headerTitleStyle: { fontWeight: '700' },
+        headerShown: false,
         contentStyle: { backgroundColor: COLORS.background },
       }}
     >
-      <Stack.Screen
-        name="BookingsMain"
-        component={BookingsScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="BookingDetail"
-        component={BookingDetailScreen}
-        options={{ title: 'Booking Status' }}
-      />
+      <Stack.Screen name="BookingsMain" component={BookingsScreen} />
+      <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+      <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} />
+      <Stack.Screen name="InvoiceDetail" component={InvoiceDetailScreen} />
+      <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
+      <Stack.Screen name="ReviewScreen" component={ReviewScreen} />
     </Stack.Navigator>
   );
 };

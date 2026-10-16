@@ -8,7 +8,10 @@ import {
   BookingDetailScreen,
   EmergencyScreen,
 } from '../screens';
-import { COLORS } from '../constants';
+import { PaymentCheckoutScreen } from '../screens/PaymentCheckoutScreen';
+import { InvoiceDetailScreen } from '../screens/InvoiceDetailScreen';
+import { LiveTrackingScreen } from '../screens/LiveTrackingScreen';
+import { COLORS } from '../theme';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
@@ -17,39 +20,26 @@ export const HomeStack: React.FC = () => {
     <Stack.Navigator
       initialRouteName="HomeMain"
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.cardBackground },
-        headerTintColor: COLORS.text,
-        headerTitleStyle: { fontWeight: '700' },
+        headerShown: false,
         contentStyle: { backgroundColor: COLORS.background },
       }}
     >
-      <Stack.Screen
-        name="HomeMain"
-        component={HomeScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="ServiceDetail"
-        component={ServiceDetailScreen}
-        options={{ title: 'Service Details' }}
-      />
-      <Stack.Screen
-        name="BookingForm"
-        component={BookingFormScreen}
-        options={{ title: 'Schedule Service' }}
-      />
-      <Stack.Screen
-        name="BookingDetail"
-        component={BookingDetailScreen}
-        options={{ title: 'Track Booking' }}
-      />
+      <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+      <Stack.Screen name="BookingForm" component={BookingFormScreen} />
+      <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+      <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} />
+      <Stack.Screen name="InvoiceDetail" component={InvoiceDetailScreen} />
+      <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
       <Stack.Screen
         name="Emergency"
         component={EmergencyScreen}
         options={{
-          title: 'Roadside Assistance SOS',
-          headerStyle: { backgroundColor: '#DC2626' },
-          headerTintColor: '#FFFFFF',
+          headerShown: true,
+          title: 'Emergency Assistance',
+          headerStyle: { backgroundColor: COLORS.primary },
+          headerTintColor: COLORS.white,
+          headerTitleStyle: { fontWeight: '700' },
         }}
       />
     </Stack.Navigator>

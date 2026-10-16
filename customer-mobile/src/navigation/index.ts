@@ -3,5 +3,8 @@ export * from './AuthStack';
 export * from './MainTabs';
 export * from './HomeStack';
 export * from './BookingsStack';
+export * from './MarketplaceStack';
 export * from './ProfileStack';
+export * from './OffersStack';
+export * from './SavedStack';
 export * from './types';

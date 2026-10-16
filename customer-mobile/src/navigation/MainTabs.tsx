@@ -1,66 +1,67 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from './types';
 import { HomeStack } from './HomeStack';
 import { BookingsStack } from './BookingsStack';
 import { MarketplaceStack } from './MarketplaceStack';
 import { ProfileStack } from './ProfileStack';
-import { COLORS } from '../constants';
+import { OffersStack } from './OffersStack';
+import { SavedStack } from './SavedStack';
+import { COLORS } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+const TAB_ICONS: Record<string, { focused: keyof typeof Ionicons.glyphMap; unfocused: keyof typeof Ionicons.glyphMap }> = {
+  Home:     { focused: 'home',           unfocused: 'home-outline' },
+  Bookings: { focused: 'calendar',       unfocused: 'calendar-outline' },
+  Offers:   { focused: 'pricetag',       unfocused: 'pricetag-outline' },
+  Saved:    { focused: 'heart',          unfocused: 'heart-outline' },
+  Profile:  { focused: 'person-circle',  unfocused: 'person-circle-outline' },
+};
 
 export const MainTabs: React.FC = () => {
   return (
     <Tab.Navigator
       initialRouteName="Home"
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.gray500,
+        tabBarInactiveTintColor: COLORS.gray400,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
-      }}
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons = TAB_ICONS[route.name];
+          const iconName = focused ? icons.focused : icons.unfocused;
+          return <Ionicons name={iconName} size={22} color={color} />;
+        },
+      })}
     >
       <Tab.Screen
         name="Home"
         component={HomeStack}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>🏠</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Home' }}
       />
       <Tab.Screen
         name="Bookings"
         component={BookingsStack}
-        options={{
-          tabBarLabel: 'Bookings',
-          tabBarIcon: ({ focused }) => (
-            <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>📅</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Bookings' }}
       />
       <Tab.Screen
-        name="Marketplace"
-        component={MarketplaceStack}
-        options={{
-          tabBarLabel: 'Marketplace',
-          tabBarIcon: ({ focused }) => (
-            <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>🛍️</Text>
-          ),
-        }}
+        name="Offers"
+        component={OffersStack}
+        options={{ tabBarLabel: 'Offers' }}
+      />
+      <Tab.Screen
+        name="Saved"
+        component={SavedStack}
+        options={{ tabBarLabel: 'Saved' }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileStack}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>👤</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>
   );
@@ -68,22 +69,20 @@ export const MainTabs: React.FC = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: COLORS.cardBackground,
+    backgroundColor: COLORS.white,
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
     height: 60,
     paddingBottom: 8,
     paddingTop: 6,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-  },
-  tabIcon: {
-    fontSize: 20,
-    opacity: 0.7,
-  },
-  tabIconFocused: {
-    opacity: 1,
   },
 });

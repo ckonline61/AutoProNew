@@ -4,45 +4,61 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TextInput,
   TouchableOpacity,
   Alert,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { COLORS } from '../constants';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { FuelType } from '../types';
 import { requestError, useCustomerData } from '../contexts/CustomerDataContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/types';
+import { Button, Card } from '../components/ui';
 
-type Props = NativeStackScreenProps<ProfileStackParamList, 'VehicleForm'>;
+type Props = Partial<NativeStackScreenProps<ProfileStackParamList, 'VehicleForm'>> & {
+  navigation?: any;
+  route?: any;
+};
 
-const FUEL_TYPES: FuelType[] = ['PETROL', 'DIESEL', 'CNG', 'ELECTRIC', 'HYBRID'];
+const FUEL_TYPES: { type: FuelType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { type: 'PETROL', label: 'Petrol', icon: 'flame-outline' },
+  { type: 'DIESEL', label: 'Diesel', icon: 'water-outline' },
+  { type: 'CNG', label: 'CNG', icon: 'speedometer-outline' },
+  { type: 'ELECTRIC', label: 'EV', icon: 'flash-outline' },
+  { type: 'HYBRID', label: 'Hybrid', icon: 'leaf-outline' },
+];
 
 export const VehicleFormScreen: React.FC<Props> = ({ route, navigation }) => {
   const { saveVehicle } = useCustomerData();
   const [saving, setSaving] = useState(false);
-  const vehicle = route.params?.vehicle;
-  const isEdit = !!route.params?.isEdit && !!vehicle;
+  const vehicle = route?.params?.vehicle;
+  const isEdit = !!route?.params?.isEdit && !!vehicle;
 
   const [brand, setBrand] = useState(vehicle?.brand || '');
   const [model, setModel] = useState(vehicle?.model || '');
   const [year, setYear] = useState(vehicle?.year ? String(vehicle.year) : String(new Date().getFullYear()));
   const [fuelType, setFuelType] = useState<FuelType>(vehicle?.fuelType || 'PETROL');
-  const [registrationNumber, setRegistrationNumber] = useState(
-    vehicle?.registrationNumber || ''
-  );
+  const [registrationNumber, setRegistrationNumber] = useState(vehicle?.registrationNumber || '');
   const [color, setColor] = useState(vehicle?.color || '');
+  const [mileage, setMileage] = useState(vehicle?.mileage ? String(vehicle.mileage) : '');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validate = () => {
     const errs: { [key: string]: string } = {};
-    if (!brand.trim()) errs.brand = 'Brand is required (e.g. Maruti, Hyundai, Tata)';
-    if (!model.trim()) errs.model = 'Model is required (e.g. Swift, Creta, Nexon)';
-    if (!year.trim() || isNaN(Number(year)) || !Number.isInteger(Number(year)) || Number(year) < 1900 || Number(year) > new Date().getFullYear() + 1) {
-      errs.year = `Enter a whole year between 1900 and ${new Date().getFullYear() + 1}`;
+    if (!brand.trim()) errs.brand = 'Brand / Make is required (e.g. Hyundai, Tata, Maruti)';
+    if (!model.trim()) errs.model = 'Model & Variant is required (e.g. Creta SX, Nexon EV)';
+
+    const numYear = Number(year);
+    const maxYear = new Date().getFullYear() + 1;
+    if (!year.trim() || isNaN(numYear) || !Number.isInteger(numYear) || numYear < 1900 || numYear > maxYear) {
+      errs.year = `Enter a valid manufacturing year (1900 - ${maxYear})`;
     }
+
     if (!registrationNumber.trim()) {
       errs.registrationNumber = 'Registration number is required (e.g. MH 12 AB 1234)';
     }
@@ -55,138 +71,214 @@ export const VehicleFormScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!validate() || saving) return;
     setSaving(true);
     try {
-      await saveVehicle({ brand: brand.trim(), model: model.trim(), year: Number(year), fuelType, registrationNumber: registrationNumber.trim().toUpperCase(), color: color.trim() || undefined }, isEdit ? vehicle?.id : undefined);
-      navigation.goBack();
-    } catch (error) { Alert.alert('Save failed', requestError(error)); }
-    finally { setSaving(false); }
+      await saveVehicle(
+        {
+          brand: brand.trim(),
+          model: model.trim(),
+          year: Number(year),
+          fuelType,
+          registrationNumber: registrationNumber.trim().toUpperCase(),
+          color: color.trim() || undefined,
+          mileage: mileage.trim() && !isNaN(Number(mileage)) ? Number(mileage) : undefined,
+        },
+        isEdit ? vehicle?.id : undefined
+      );
+      if (navigation?.goBack) {
+        navigation.goBack();
+      }
+    } catch (error) {
+      Alert.alert('Save Failed', requestError(error));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.title}>{isEdit ? 'Edit Vehicle Details' : 'Add New Vehicle'}</Text>
-          <Text style={styles.subtitle}>
-            Enter your vehicle details for accurate spare part matching and service estimates.
-          </Text>
+      {/* Screen Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          {navigation?.goBack && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.headerTitle}>{isEdit ? 'Edit Vehicle' : 'Add Vehicle'}</Text>
         </View>
+      </View>
 
-        <View style={styles.card}>
-          {/* Brand */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Make / Manufacturer</Text>
-            <TextInput
-              style={[styles.input, errors.brand ? styles.inputError : null]}
-              placeholder="e.g. Hyundai, Toyota, Tata, Honda"
-              placeholderTextColor={COLORS.gray400}
-              value={brand}
-              onChangeText={(text) => {
-                setBrand(text);
-                if (errors.brand) setErrors((prev) => ({ ...prev, brand: '' }));
-              }}
-            />
-            {errors.brand ? <Text style={styles.errorText}>{errors.brand}</Text> : null}
-          </View>
-
-          {/* Model */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Model & Variant</Text>
-            <TextInput
-              style={[styles.input, errors.model ? styles.inputError : null]}
-              placeholder="e.g. Creta SX, Nexon EV, City ZX"
-              placeholderTextColor={COLORS.gray400}
-              value={model}
-              onChangeText={(text) => {
-                setModel(text);
-                if (errors.model) setErrors((prev) => ({ ...prev, model: '' }));
-              }}
-            />
-            {errors.model ? <Text style={styles.errorText}>{errors.model}</Text> : null}
-          </View>
-
-          {/* Year */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Manufacturing Year</Text>
-            <TextInput
-              style={[styles.input, errors.year ? styles.inputError : null]}
-              placeholder="e.g. 2022"
-              placeholderTextColor={COLORS.gray400}
-              keyboardType="number-pad"
-              maxLength={4}
-              value={year}
-              onChangeText={(text) => {
-                setYear(text);
-                if (errors.year) setErrors((prev) => ({ ...prev, year: '' }));
-              }}
-            />
-            {errors.year ? <Text style={styles.errorText}>{errors.year}</Text> : null}
-          </View>
-
-          {/* Registration Number */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Registration Number</Text>
-            <TextInput
-              style={[styles.input, errors.registrationNumber ? styles.inputError : null]}
-              placeholder="e.g. MH 12 AB 1234"
-              placeholderTextColor={COLORS.gray400}
-              autoCapitalize="characters"
-              value={registrationNumber}
-              onChangeText={(text) => {
-                setRegistrationNumber(text.toUpperCase());
-                if (errors.registrationNumber) setErrors((prev) => ({ ...prev, registrationNumber: '' }));
-              }}
-            />
-            {errors.registrationNumber ? (
-              <Text style={styles.errorText}>{errors.registrationNumber}</Text>
-            ) : null}
-          </View>
-
-          {/* Fuel Type selector */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Fuel Type</Text>
-            <View style={styles.fuelTypeRow}>
-              {FUEL_TYPES.map((type) => {
-                const isSelected = fuelType === type;
-                return (
-                  <TouchableOpacity
-                    key={type}
-                    style={[styles.fuelPill, isSelected && styles.fuelPillActive]}
-                    onPress={() => setFuelType(type)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.fuelText, isSelected && styles.fuelTextActive]}>
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Garage Banner Card */}
+          <Card style={styles.garageBanner} elevation="none" border>
+            <View style={styles.bannerRow}>
+              <View style={styles.carIconCircle}>
+                <Ionicons name="car-sport" size={26} color={COLORS.primary} />
+              </View>
+              <View style={styles.bannerInfo}>
+                <Text style={styles.bannerTitle}>My Garage Vehicle Specs</Text>
+                <Text style={styles.bannerSub}>
+                  Used for tailored periodic maintenance schedules, compatible spare parts, and doorstep service.
+                </Text>
+              </View>
             </View>
-          </View>
+          </Card>
 
-          {/* Color (Optional) */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Exterior Color (Optional)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Polar White, Phantom Black"
-              placeholderTextColor={COLORS.gray400}
-              value={color}
-              onChangeText={setColor}
-            />
-          </View>
+          {/* Form Fields Card */}
+          <Card style={styles.formCard} elevation="sm" border>
+            {/* Make / Manufacturer */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Make / Manufacturer *</Text>
+              <TextInput
+                style={[styles.input, errors.brand ? styles.inputError : null]}
+                placeholder="e.g. Maruti Suzuki, Hyundai, Tata, Honda"
+                placeholderTextColor={COLORS.textMuted}
+                value={brand}
+                onChangeText={(text) => {
+                  setBrand(text);
+                  if (errors.brand) setErrors((prev) => ({ ...prev, brand: '' }));
+                }}
+              />
+              {errors.brand ? <Text style={styles.errorText}>{errors.brand}</Text> : null}
+            </View>
 
-          <TouchableOpacity
-            style={styles.saveBtn}
-            onPress={handleSave}
-            disabled={saving}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.saveBtnText}>{isEdit ? 'Update Vehicle' : 'Save Vehicle'}</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            {/* Model & Variant */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Model & Variant *</Text>
+              <TextInput
+                style={[styles.input, errors.model ? styles.inputError : null]}
+                placeholder="e.g. Creta SX(O), Nexon EV, Swift ZXi"
+                placeholderTextColor={COLORS.textMuted}
+                value={model}
+                onChangeText={(text) => {
+                  setModel(text);
+                  if (errors.model) setErrors((prev) => ({ ...prev, model: '' }));
+                }}
+              />
+              {errors.model ? <Text style={styles.errorText}>{errors.model}</Text> : null}
+            </View>
+
+            {/* Year & Mileage Row */}
+            <View style={styles.rowFields}>
+              <View style={[styles.fieldGroup, { flex: 1, marginRight: SPACING.sm }]}>
+                <Text style={styles.fieldLabel}>Year *</Text>
+                <TextInput
+                  style={[styles.input, errors.year ? styles.inputError : null]}
+                  placeholder="e.g. 2022"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={4}
+                  value={year}
+                  onChangeText={(text) => {
+                    setYear(text);
+                    if (errors.year) setErrors((prev) => ({ ...prev, year: '' }));
+                  }}
+                />
+                {errors.year ? <Text style={styles.errorText}>{errors.year}</Text> : null}
+              </View>
+
+              <View style={[styles.fieldGroup, { flex: 1 }]}>
+                <Text style={styles.fieldLabel}>Odometer (km)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. 35000"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="number-pad"
+                  value={mileage}
+                  onChangeText={setMileage}
+                />
+              </View>
+            </View>
+
+            {/* Fuel Type Pill Selector */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Fuel Type *</Text>
+              <View style={styles.fuelPillsRow}>
+                {FUEL_TYPES.map((item) => {
+                  const isSelected = fuelType === item.type;
+                  return (
+                    <TouchableOpacity
+                      key={item.type}
+                      style={[styles.fuelPill, isSelected && styles.fuelPillActive]}
+                      onPress={() => setFuelType(item.type)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={14}
+                        color={isSelected ? COLORS.white : COLORS.textSecondary}
+                        style={{ marginRight: 4 }}
+                      />
+                      <Text style={[styles.fuelPillText, isSelected && styles.fuelPillTextActive]}>
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Registration Number */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Registration Number *</Text>
+              <TextInput
+                style={[styles.input, errors.registrationNumber ? styles.inputError : null]}
+                placeholder="e.g. MH 12 AB 4589"
+                placeholderTextColor={COLORS.textMuted}
+                autoCapitalize="characters"
+                value={registrationNumber}
+                onChangeText={(text) => {
+                  setRegistrationNumber(text.toUpperCase());
+                  if (errors.registrationNumber) {
+                    setErrors((prev) => ({ ...prev, registrationNumber: '' }));
+                  }
+                }}
+              />
+              {errors.registrationNumber ? (
+                <Text style={styles.errorText}>{errors.registrationNumber}</Text>
+              ) : null}
+            </View>
+
+            {/* Color */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Exterior Color (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Polar White, Daytona Grey, Black"
+                placeholderTextColor={COLORS.textMuted}
+                value={color}
+                onChangeText={setColor}
+              />
+            </View>
+
+            {/* Save CTA */}
+            <View style={styles.ctaWrapper}>
+              <Button
+                title={saving ? 'Saving Vehicle...' : isEdit ? 'Update Vehicle' : 'Save Vehicle'}
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={saving}
+                onPress={handleSave}
+              />
+            </View>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -196,105 +288,129 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
   header: {
-    marginBottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.text,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  subtitle: {
-    fontSize: 13,
+  backButton: {
+    marginRight: SPACING.sm,
+    padding: SPACING.xs,
+  },
+  headerTitle: {
+    ...TYPOGRAPHY.h3,
+    color: COLORS.textPrimary,
+  },
+  scrollContent: {
+    padding: SPACING.lg,
+    paddingBottom: SPACING['3xl'],
+  },
+  garageBanner: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  bannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  carIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.md,
+  },
+  bannerInfo: {
+    flex: 1,
+  },
+  bannerTitle: {
+    ...TYPOGRAPHY.bodySemibold,
+    color: COLORS.textPrimary,
+  },
+  bannerSub: {
+    ...TYPOGRAPHY.caption,
     color: COLORS.textSecondary,
-    marginTop: 4,
-    lineHeight: 18,
+    lineHeight: 16,
+    marginTop: 2,
   },
-  card: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  formCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADII.md,
+    padding: SPACING.xl,
   },
-  inputGroup: {
-    marginBottom: 16,
+  fieldGroup: {
+    marginBottom: SPACING.lg,
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
+  rowFields: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  fieldLabel: {
+    ...TYPOGRAPHY.label,
+    color: COLORS.textPrimary,
     marginBottom: 6,
   },
   input: {
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.gray50,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    borderRadius: RADII.md,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 12,
-    fontSize: 14,
-    color: COLORS.text,
+    ...TYPOGRAPHY.body,
+    color: COLORS.textPrimary,
   },
   inputError: {
-    borderColor: COLORS.emergency,
+    borderColor: COLORS.error,
     backgroundColor: '#FEF2F2',
   },
   errorText: {
-    color: COLORS.emergency,
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
+    color: COLORS.error,
     marginTop: 4,
   },
-  fuelTypeRow: {
+  fuelPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.xs + 2,
   },
   fuelPill: {
-    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: RADII.full,
     borderWidth: 1,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.gray100,
+    backgroundColor: COLORS.gray50,
   },
   fuelPillActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: '#EFF6FF',
-  },
-  fuelText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.gray700,
-  },
-  fuelTextActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
-  },
-  saveBtn: {
     backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 10,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: COLORS.primary,
   },
-  saveBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+  fuelPillText: {
+    ...TYPOGRAPHY.caption,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  fuelPillTextActive: {
+    color: COLORS.white,
     fontWeight: '700',
+  },
+  ctaWrapper: {
+    marginTop: SPACING.md,
   },
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStackParamList } from './types';
 import { LoginScreen, RegisterScreen } from '../screens';
-import { COLORS } from '../constants';
+import { COLORS } from '../theme';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -24,7 +24,7 @@ export const AuthStack: React.FC = () => {
           title: 'Create Account',
           headerBackTitle: 'Login',
           headerTintColor: COLORS.primary,
-          headerStyle: { backgroundColor: COLORS.cardBackground },
+          headerStyle: { backgroundColor: COLORS.white },
         }}
       />
     </Stack.Navigator>
