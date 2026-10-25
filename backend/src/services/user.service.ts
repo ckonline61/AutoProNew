@@ -83,7 +83,6 @@ export class UserService {
     user.password = await bcryptjs.hash(newPassword, 10);
     await user.save();
   }
-}
 
   /**
    * Save a push notification device token for the user.
