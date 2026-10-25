@@ -39,6 +39,11 @@ import addressRoutes from './address.routes';
 router.use('/users/profile', userRoutes);
 router.use('/vehicles', vehicleRoutes);
 router.use('/addresses', addressRoutes);
+
+// Device token endpoint (push notifications)
+import { userController } from '../controllers/user.controller';
+import { authenticate } from '../middleware/auth';
+router.post('/users/device-token', authenticate, userController.saveDeviceToken);
 // Phase 05: router.use('/users', userRoutes);
 // Phase 05: router.use('/vehicles', vehicleRoutes);
 // Phase 05: router.use('/addresses', addressRoutes);
