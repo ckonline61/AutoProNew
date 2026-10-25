@@ -28,7 +28,8 @@ export default function SettingsPage() {
     setHealthLoading(true);
     try {
       const res = await api.get('/admin/health');
-      setHealth(res.data);
+      const d = res.data?.data || res.data;
+      setHealth({ status: 'healthy', ...d });
     } catch {
       setHealth({ status: 'unhealthy' });
     } finally {
