@@ -116,6 +116,21 @@ export class CouponService {
   }
 
   /**
+   * Public: Get active, non-expired coupons for display in the app (no auth required).
+   */
+  async getPublicActive(limit = 20): Promise<ICoupon[]> {
+    const now = new Date();
+    return Coupon.find({
+      isActive: true,
+      validFrom: { $lte: now },
+      validTo: { $gte: now },
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select('-usedCount -usageLimit -applicableServices');
+  }
+
+  /**
    * Admin: Get all coupons with pagination.
    */
   async getAll(page = 1, limit = 20) {

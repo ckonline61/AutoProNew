@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,16 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { Card, Badge, TabPills, Button, TabPillItem } from '../components/ui';
+import api from '../config/api';
+
+const SAVED_CARS_KEY = 'autopro_saved_car_ids';
 
 interface SavedCarsScreenProps {
   navigation?: any;
@@ -34,92 +39,110 @@ interface SavedCarItem {
   category: 'Shortlisted' | 'Viewed';
 }
 
-const INITIAL_SAVED_CARS: SavedCarItem[] = [
-  {
-    id: 'car_1',
-    brand: 'Honda',
-    model: 'City ZX CVT Petrol',
-    variant: 'ZX (Sunroof, Leather)',
-    year: 2021,
-    price: 1140000,
-    mileage: 32000,
-    fuelType: 'Petrol',
-    transmission: 'Automatic',
-    location: 'Baner, Pune',
-    imageUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600',
-    inspectionScore: 9.4,
+/** Save a car ID to the persistent wishlist */
+export async function saveCarToWishlist(carId: string): Promise<void> {
+  const stored = await AsyncStorage.getItem(SAVED_CARS_KEY);
+  const ids: string[] = stored ? (JSON.parse(stored) as string[]) : [];
+  if (!ids.includes(carId)) {
+    ids.push(carId);
+    await AsyncStorage.setItem(SAVED_CARS_KEY, JSON.stringify(ids));
+  }
+}
+
+/** Remove a car ID from the persistent wishlist */
+export async function removeCarFromWishlist(carId: string): Promise<void> {
+  const stored = await AsyncStorage.getItem(SAVED_CARS_KEY);
+  const ids: string[] = stored ? (JSON.parse(stored) as string[]) : [];
+  await AsyncStorage.setItem(SAVED_CARS_KEY, JSON.stringify(ids.filter((id) => id !== carId)));
+}
+
+function mapCar(raw: Record<string, unknown>): SavedCarItem {
+  const loc = raw.location as Record<string, unknown> | undefined;
+  const locationStr = loc ? `${loc.city ?? ''}, ${loc.state ?? ''}`.trim().replace(/^,|,$/, '') : 'India';
+  const images = raw.images as string[] | undefined;
+  return {
+    id: String(raw._id ?? raw.id ?? ''),
+    brand: String(raw.brand ?? ''),
+    model: String(raw.model ?? ''),
+    variant: String(raw.variant ?? raw.model ?? ''),
+    year: Number(raw.year ?? 0),
+    price: Number(raw.price ?? 0),
+    mileage: Number(raw.mileage ?? 0),
+    fuelType: String(raw.fuelType ?? 'Petrol'),
+    transmission: String(raw.transmission ?? 'Manual'),
+    location: locationStr,
+    imageUrl: images?.[0],
+    inspectionScore: Number(raw.inspectionScore ?? 9.0),
     isFavorite: true,
     category: 'Shortlisted',
-  },
-  {
-    id: 'car_2',
-    brand: 'Tata',
-    model: 'Harrier XZA+ Dark Edition',
-    variant: 'XZA+ Kryotec Flagship',
-    year: 2022,
-    price: 1890000,
-    mileage: 28500,
-    fuelType: 'Diesel',
-    transmission: 'Automatic',
-    location: 'Kothrud, Pune',
-    imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600',
-    inspectionScore: 9.6,
-    isFavorite: true,
-    category: 'Shortlisted',
-  },
-  {
-    id: 'car_3',
-    brand: 'Volkswagen',
-    model: 'Polo GT 1.0 TSI',
-    variant: 'GT Highline Plus TSI',
-    year: 2020,
-    price: 785000,
-    mileage: 41000,
-    fuelType: 'Petrol',
-    transmission: 'Automatic',
-    location: 'Viman Nagar, Pune',
-    imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600',
-    inspectionScore: 9.1,
-    isFavorite: true,
-    category: 'Viewed',
-  },
-  {
-    id: 'car_4',
-    brand: 'Hyundai',
-    model: 'Creta SX(O) 1.5 Turbo',
-    variant: 'SX(O) Knight Edition',
-    year: 2023,
-    price: 1650000,
-    mileage: 19200,
-    fuelType: 'Petrol',
-    transmission: 'DCT Auto',
-    location: 'Aundh, Pune',
-    imageUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600',
-    inspectionScore: 9.7,
-    isFavorite: true,
-    category: 'Viewed',
-  },
-];
+  };
+}
 
 export const SavedCarsScreen: React.FC<SavedCarsScreenProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<string>('all');
-  const [savedCars, setSavedCars] = useState<SavedCarItem[]>(INITIAL_SAVED_CARS);
+  const [savedCars, setSavedCars] = useState<SavedCarItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleFavorite = (id: string) => {
-    setSavedCars((prev) =>
-      prev.map((car) => (car.id === id ? { ...car, isFavorite: !car.isFavorite } : car))
-    );
+  const loadSavedCars = useCallback(async () => {
+    try {
+      setLoading(true);
+      const stored = await AsyncStorage.getItem(SAVED_CARS_KEY);
+      const ids: string[] = stored ? (JSON.parse(stored) as string[]) : [];
+
+      if (ids.length === 0) {
+        setSavedCars([]);
+        return;
+      }
+
+      // Fetch each saved car from the API
+      const results = await Promise.allSettled(
+        ids.map((id) => api.get(`/used-cars/${id}`))
+      );
+
+      const cars: SavedCarItem[] = [];
+      const validIds: string[] = [];
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const raw = result.value.data?.data ?? result.value.data;
+          if (raw) {
+            cars.push(mapCar(raw as Record<string, unknown>));
+            validIds.push(ids[index]);
+          }
+        }
+        // If rejected (car deleted), skip — don't add to validIds
+      });
+
+      // Prune stale IDs
+      if (validIds.length !== ids.length) {
+        await AsyncStorage.setItem(SAVED_CARS_KEY, JSON.stringify(validIds));
+      }
+
+      setSavedCars(cars);
+    } catch {
+      setSavedCars([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSavedCars();
+  }, [loadSavedCars]);
+
+  const toggleFavorite = async (id: string) => {
+    await removeCarFromWishlist(id);
+    setSavedCars((prev) => prev.filter((car) => car.id !== id));
   };
 
   const filteredCars = savedCars.filter((car) => {
-    if (!car.isFavorite) return false;
     if (activeTab === 'all' || activeTab === 'cars') return true;
     if (activeTab === 'viewed') return car.category === 'Viewed';
     if (activeTab === 'shortlisted') return car.category === 'Shortlisted';
     return true;
   });
 
-  const activeCount = savedCars.filter((c) => c.isFavorite).length;
+  const activeCount = savedCars.length;
 
   const TABS: TabPillItem[] = [
     { key: 'all', label: 'All', count: activeCount },
@@ -127,6 +150,25 @@ export const SavedCarsScreen: React.FC<SavedCarsScreenProps> = ({ navigation }) 
     { key: 'viewed', label: 'Viewed' },
     { key: 'shortlisted', label: 'Shortlisted' },
   ];
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Saved Cars</Text>
+          </View>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={{ ...TYPOGRAPHY.bodySmall, color: COLORS.textSecondary, marginTop: SPACING.sm }}>
+            Loading saved cars...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>

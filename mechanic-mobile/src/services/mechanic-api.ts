@@ -76,3 +76,17 @@ export async function updateJob(kind: JobKind, job: Job, action: string, notes: 
   if (action === 'accept' || action === 'reject') await api.post(`${base}/${action}`, { reason: notes || 'Declined by mechanic' });
   else await api.put(`${base}/status`, { status: action, notes });
 }
+export async function submitOnboarding(specializations: string[], experience: number, license?: string): Promise<void> {
+  await api.post('/mechanics/onboard', {
+    specializations,
+    experience,
+    documents: license?.trim() ? { license: license.trim() } : {},
+  });
+}
+export async function updateAvailability(isOnline: boolean): Promise<void> {
+  await api.put('/mechanics/availability', { isOnline });
+}
+export async function sendLocation(latitude: number, longitude: number, jobId: string, jobType: JobKind): Promise<void> {
+  await api.put('/mechanics/location', { latitude, longitude, jobId, jobType });
+}
+

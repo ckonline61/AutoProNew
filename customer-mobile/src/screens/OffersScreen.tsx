@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { Card, Button, TabPills, TabPillItem, Badge } from '../components/ui';
+import api from '../config/api';
 
 interface Coupon {
   id: string;
@@ -25,88 +27,91 @@ interface Coupon {
   validity: string;
 }
 
-const MOCK_COUPONS: Coupon[] = [
-  {
-    id: 'c1',
-    code: 'AUTOPRO20',
-    category: 'SERVICE',
-    discountBadge: '20% OFF',
-    title: 'Get 20% OFF on Periodic Service',
-    description: 'Instant discount on comprehensive periodic service package with synthetic oil replacement.',
-    minOrder: 'Min. order ₹2,499',
-    validity: 'Valid till 31 Oct 2026',
-  },
-  {
-    id: 'c2',
-    code: 'FREETEST',
-    category: 'SERVICE',
-    discountBadge: 'FREE SCAN',
-    title: 'Free 40-Point Electronic Diagnostic Scan',
-    description: 'Get a full computerized health diagnostic scan complimentary with any service.',
-    minOrder: 'Min. order ₹1,499',
-    validity: 'Valid till 15 Nov 2026',
-  },
-  {
-    id: 'c3',
-    code: 'PARTS15',
-    category: 'PARTS',
-    discountBadge: '15% OFF',
-    title: 'Flat 15% OFF on Genuine Brake Pads & Filters',
-    description: 'Save 15% on 100% genuine OEM & OES spare parts from Bosch, Brembo & Mobil 1.',
-    minOrder: 'Min. order ₹999',
-    validity: 'Valid till 05 Nov 2026',
-  },
-  {
-    id: 'c4',
-    code: 'BATTERY500',
-    category: 'PARTS',
-    discountBadge: '₹500 OFF',
-    title: 'Flat ₹500 OFF on Exide & Amaron Batteries',
-    description: 'Save ₹500 instantly on doorstep battery installation with manufacturer warranty.',
-    minOrder: 'Min. order ₹3,000',
-    validity: 'Valid till 30 Nov 2026',
-  },
-  {
-    id: 'c5',
-    code: 'ASSUREDCAR',
-    category: 'CARS',
-    discountBadge: '1 YR WARRANTY',
-    title: 'Free 1-Year Comprehensive Warranty',
-    description: 'Get free 12-month roadside assistance & mechanical warranty on all certified used cars.',
-    minOrder: 'Valid on certified cars',
-    validity: 'Valid till 31 Dec 2026',
-  },
-];
+/** Format ₹ amount with commas */
+function formatRupees(value: number): string {
+  return '₹' + value.toLocaleString('en-IN');
+}
+
+/** Format ISO date → "Valid till DD MMM YYYY" */
+function formatValidity(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return 'Valid till ' + d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return 'Limited time offer';
+  }
+}
+
+/** Map backend coupon → UI Coupon */
+function mapCoupon(raw: Record<string, unknown>): Coupon {
+  const discountType = raw.discountType as string;
+  const discountValue = Number(raw.discountValue ?? 0);
+  const discountBadge =
+    discountType === 'PERCENTAGE' ? `${discountValue}% OFF` : `${formatRupees(discountValue)} OFF`;
+
+  const minAmt = Number(raw.minOrderAmount ?? 0);
+  const minOrder = minAmt > 0 ? `Min. order ${formatRupees(minAmt)}` : 'No minimum order';
+
+  // Map applicableOn or description keyword → category
+  const desc = String(raw.description ?? '').toUpperCase();
+  let category: Coupon['category'] = 'ALL';
+  if (desc.includes('SERVICE') || desc.includes('MAINTENANCE') || desc.includes('PERIODIC')) category = 'SERVICE';
+  else if (desc.includes('PARTS') || desc.includes('BATTERY') || desc.includes('TYRE') || desc.includes('FILTER')) category = 'PARTS';
+  else if (desc.includes('CAR') || desc.includes('LISTING') || desc.includes('USED')) category = 'CARS';
+
+  return {
+    id: String(raw._id ?? raw.id ?? Math.random()),
+    code: String(raw.code ?? ''),
+    category,
+    discountBadge,
+    title: String(raw.description ?? raw.code ?? 'Special Offer'),
+    description: String(raw.description ?? ''),
+    minOrder,
+    validity: raw.validTo ? formatValidity(String(raw.validTo)) : 'Limited time offer',
+  };
+}
 
 type CategoryFilter = 'ALL' | 'SERVICE' | 'PARTS' | 'CARS';
 
 export const OffersScreen: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('ALL');
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch active public coupons from backend on mount (no auth required)
+  useEffect(() => {
+    api
+      .get('/coupons/public')
+      .then((res) => {
+        const raw: unknown[] = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
+        setCoupons(raw.map((c) => mapCoupon(c as Record<string, unknown>)));
+      })
+      .catch(() => {
+        // Network error — show empty state gracefully; no crash
+        setCoupons([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const tabs: TabPillItem[] = [
-    { key: 'ALL', label: 'All', count: MOCK_COUPONS.length },
-    {
-      key: 'SERVICE',
-      label: 'Service',
-      count: MOCK_COUPONS.filter((c) => c.category === 'SERVICE').length,
-    },
-    {
-      key: 'PARTS',
-      label: 'Spare Parts',
-      count: MOCK_COUPONS.filter((c) => c.category === 'PARTS').length,
-    },
-    {
-      key: 'CARS',
-      label: 'Used Cars',
-      count: MOCK_COUPONS.filter((c) => c.category === 'CARS').length,
-    },
+    { key: 'ALL', label: 'All', count: coupons.length },
+    { key: 'SERVICE', label: 'Service', count: coupons.filter((c) => c.category === 'SERVICE').length },
+    { key: 'PARTS', label: 'Spare Parts', count: coupons.filter((c) => c.category === 'PARTS').length },
+    { key: 'CARS', label: 'Used Cars', count: coupons.filter((c) => c.category === 'CARS').length },
   ];
 
   const filteredCoupons = useMemo(() => {
-    if (activeCategory === 'ALL') return MOCK_COUPONS;
-    return MOCK_COUPONS.filter((c) => c.category === activeCategory);
-  }, [activeCategory]);
+    if (activeCategory === 'ALL') return coupons;
+    return coupons.filter((c) => c.category === activeCategory);
+  }, [activeCategory, coupons]);
+
+  // Hero coupon — first SERVICE coupon or first coupon overall
+  const heroCoupon = coupons.find((c) => c.category === 'SERVICE') ?? coupons[0] ?? null;
 
   const handleApplyCoupon = (coupon: Coupon) => {
     setAppliedCode(coupon.code);
@@ -115,6 +120,24 @@ export const OffersScreen: React.FC = () => {
       `Code "${coupon.code}" has been applied to your session.\n${coupon.title}\n\nYou will receive your discount at checkout.`
     );
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Offers & Coupons</Text>
+          <Text style={styles.headerSubtitle}>Save more with exclusive deals and promo vouchers</Text>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={{ ...TYPOGRAPHY.bodySmall, color: COLORS.textSecondary, marginTop: SPACING.sm }}>
+            Loading offers...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,22 +168,24 @@ export const OffersScreen: React.FC = () => {
               <Text style={styles.heroBadgeText}>LIMITED TIME OFFER</Text>
             </View>
 
-            <Text style={styles.heroTitle}>GET 20% OFF ON CAR SERVICE</Text>
+            <Text style={styles.heroTitle}>
+              {heroCoupon ? heroCoupon.discountBadge + ' ON CAR SERVICE' : 'EXCLUSIVE OFFERS FOR YOU'}
+            </Text>
             <Text style={styles.heroSubtitle}>
-              Periodic maintenance, AC repair & deep detailing
+              Periodic maintenance, AC repair &amp; deep detailing
             </Text>
 
             {/* Code Box */}
-            <TouchableOpacity
-              style={styles.codePill}
-              activeOpacity={0.8}
-              onPress={() =>
-                handleApplyCoupon(MOCK_COUPONS.find((c) => c.code === 'AUTOPRO20')!)
-              }
-            >
-              <Text style={styles.codePillText}>Use Code: AUTOPRO20</Text>
-              <Ionicons name="copy-outline" size={16} color={COLORS.white} />
-            </TouchableOpacity>
+            {heroCoupon && (
+              <TouchableOpacity
+                style={styles.codePill}
+                activeOpacity={0.8}
+                onPress={() => handleApplyCoupon(heroCoupon)}
+              >
+                <Text style={styles.codePillText}>Use Code: {heroCoupon.code}</Text>
+                <Ionicons name="copy-outline" size={16} color={COLORS.white} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Decorative Background Icon */}
@@ -177,6 +202,17 @@ export const OffersScreen: React.FC = () => {
             onTabChange={(key) => setActiveCategory(key as CategoryFilter)}
           />
         </View>
+
+        {/* Empty state */}
+        {filteredCoupons.length === 0 && (
+          <View style={{ alignItems: 'center', paddingVertical: SPACING['4xl'] }}>
+            <Ionicons name="ticket-outline" size={56} color={COLORS.gray300} />
+            <Text style={{ ...TYPOGRAPHY.h4, color: COLORS.textPrimary, marginTop: SPACING.md }}>No Offers Right Now</Text>
+            <Text style={{ ...TYPOGRAPHY.bodySmall, color: COLORS.textSecondary, marginTop: 4 }}>
+              Check back soon for exclusive deals!
+            </Text>
+          </View>
+        )}
 
         {/* Coupon Cards List */}
         <View style={styles.couponsList}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { Button, Card, Badge, Avatar, RatingStars } from '../components/ui';
+import api from '../config/api';
 
 interface LiveTrackingScreenProps {
   navigation?: any;
@@ -36,30 +37,98 @@ const STEP_CONFIG = [
   { key: 'COMPLETED', label: 'Done', icon: 'ribbon' },
 ];
 
+/** Map backend booking status → UI TrackingStep */
+function mapStatusToStep(status: string): TrackingStep {
+  switch (status) {
+    case 'ASSIGNED':
+      return 'ASSIGNED';
+    case 'EN_ROUTE':
+      return 'EN_ROUTE';
+    case 'IN_PROGRESS':
+      return 'ON_SERVICE';
+    case 'COMPLETED':
+      return 'COMPLETED';
+    default:
+      return 'EN_ROUTE';
+  }
+}
+
 export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
   route,
   navigation,
 }) => {
   const bookingId = route?.params?.bookingId || 'BK-1001';
-  const mechanicName = route?.params?.mechanicName || 'Rajesh Sharma';
-  const mechanicRating = route?.params?.mechanicRating || 4.9;
+
+  // Mechanic info — populated from API, fall back to route params / defaults
+  const [mechanicName, setMechanicName] = useState<string>(
+    route?.params?.mechanicName || 'Your Mechanic'
+  );
+  const [mechanicRating, setMechanicRating] = useState<number>(
+    route?.params?.mechanicRating || 0
+  );
+  const [mechanicPhone, setMechanicPhone] = useState<string | null>(null);
 
   const [currentStep, setCurrentStep] = useState<TrackingStep>('EN_ROUTE');
   const [etaMinutes, setEtaMinutes] = useState(5);
   const [distanceKm, setDistanceKm] = useState('1.8');
+  const [loading, setLoading] = useState(true);
 
-  // Simulate progress decrement
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /** Fetch booking data and update state */
+  const fetchBooking = async () => {
+    try {
+      const response = await api.get(`/bookings/${bookingId}`);
+      const booking = response.data?.data ?? response.data;
+
+      if (booking) {
+        // Map status to UI step
+        if (booking.status) {
+          setCurrentStep(mapStatusToStep(booking.status));
+        }
+
+        // Extract mechanic info
+        const mechanic = booking.mechanicId;
+        if (mechanic) {
+          if (mechanic.name) setMechanicName(mechanic.name);
+          if (typeof mechanic.rating === 'number') setMechanicRating(mechanic.rating);
+          if (mechanic.phone) setMechanicPhone(mechanic.phone);
+        }
+
+        // ETA / distance if provided by API
+        if (typeof booking.etaMinutes === 'number') {
+          setEtaMinutes(booking.etaMinutes);
+        }
+        if (booking.distanceKm) {
+          setDistanceKm(String(booking.distanceKm));
+        }
+      }
+    } catch {
+      // Network / API unavailable — keep existing state (params or defaults)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch + polling every 10 seconds
   useEffect(() => {
-    const timer = setInterval(() => {
-      setEtaMinutes((prev) => (prev > 1 ? prev - 1 : 1));
-    }, 15000);
-    return () => clearInterval(timer);
-  }, []);
+    fetchBooking();
+    pollingRef.current = setInterval(fetchBooking, 10000);
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingId]);
 
   const handleCallMechanic = () => {
-    Linking.openURL('tel:+919823456780').catch(() => {
-      Alert.alert('Call Mechanic', 'Calling Rajesh Sharma at +91 98234 56780');
-    });
+    const phone = mechanicPhone ?? '';
+    if (phone) {
+      Linking.openURL(`tel:${phone}`).catch(() => {
+        Alert.alert('Call Mechanic', `Calling ${mechanicName} at ${phone}`);
+      });
+    } else {
+      Alert.alert('Call Mechanic', `Mechanic contact unavailable right now.`);
+    }
   };
 
   const handleChatMechanic = () => {
@@ -129,7 +198,9 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
               <Ionicons name="car-sport" size={20} color={COLORS.white} />
             </View>
             <View style={styles.mechanicCallout}>
-              <Text style={styles.mechanicCalloutText}>Rajesh (TVS Pro)</Text>
+              <Text style={styles.mechanicCalloutText}>
+                {mechanicName.split(' ')[0]} (TVS Pro)
+              </Text>
             </View>
           </View>
         </View>

@@ -4,6 +4,11 @@ import { apiResponse } from '../utils/api-response';
 import { couponService } from '../services/coupon.service';
 
 export const couponController = {
+  getPublicActive: asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    const coupons = await couponService.getPublicActive(20);
+    res.status(200).json(apiResponse.success(coupons, 'Active coupons fetched'));
+  }),
+
   create: asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const coupon = await couponService.create(req.body);
     res.status(201).json(apiResponse.success(coupon, 'Coupon created successfully'));

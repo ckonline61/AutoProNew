@@ -1,0 +1,37 @@
+# Node modules — reinstalled inside container
+node_modules/
+
+# TypeScript source — only compiled JS needed in production
+# (builder stage copies src/, production stage does NOT)
+
+# Test files — not needed in production
+tests/
+coverage/
+*.test.ts
+*.spec.ts
+jest.config.ts
+
+# Build artifacts (builder recreates these)
+dist/
+
+# Environment files — NEVER bake secrets into image
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Docs & dev files
+*.md
+*.log
+.editorconfig
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

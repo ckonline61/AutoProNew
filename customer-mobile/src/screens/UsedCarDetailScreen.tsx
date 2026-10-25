@@ -1,13 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { useCustomerData } from '../contexts/CustomerDataContext';
+import { saveCarToWishlist, removeCarFromWishlist } from './SavedCarsScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SAVED_KEY = 'autopro_saved_car_ids';
 
 export const UsedCarDetailScreen: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
   const { carId } = route.params || {};
   const { usedCars } = useCustomerData();
   const car = usedCars.find(c => c.id === carId) || usedCars[0];
+
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Check if this car is already saved on mount
+  useEffect(() => {
+    if (!car) return;
+    AsyncStorage.getItem(SAVED_KEY).then((raw) => {
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      setIsSaved(ids.includes(car.id));
+    }).catch(() => {});
+  }, [car]);
+
+  const handleToggleSave = async () => {
+    if (!car) return;
+    if (isSaved) {
+      await removeCarFromWishlist(car.id);
+      setIsSaved(false);
+    } else {
+      await saveCarToWishlist(car.id);
+      setIsSaved(true);
+    }
+  };
 
   if (!car) return <SafeAreaView style={s.container}><Text style={{ padding: 24 }}>Car not found</Text></SafeAreaView>;
 
@@ -25,7 +51,16 @@ export const UsedCarDetailScreen: React.FC<{ navigation: any; route: any }> = ({
         {/* Header */}
         <View style={s.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} /></TouchableOpacity>
-          <TouchableOpacity><Ionicons name="share-social-outline" size={24} color={COLORS.textPrimary} /></TouchableOpacity>
+          <View style={s.headerRight}>
+            <TouchableOpacity onPress={handleToggleSave}>
+              <Ionicons
+                name={isSaved ? 'heart' : 'heart-outline'}
+                size={24}
+                color={isSaved ? COLORS.error ?? '#E53935' : COLORS.textPrimary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity><Ionicons name="share-social-outline" size={24} color={COLORS.textPrimary} /></TouchableOpacity>
+          </View>
         </View>
 
         {/* Image Carousel Placeholder */}
@@ -102,6 +137,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.white },
   scroll: { paddingBottom: 100 },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   imagePlaceholder: { width: '100%', height: 250, backgroundColor: COLORS.gray100, alignItems: 'center', justifyContent: 'center' },
   imageCounter: { position: 'absolute', top: SPACING.md, right: SPACING.md, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADII.full },
   imageCounterText: { ...TYPOGRAPHY.labelSmall, color: COLORS.white },

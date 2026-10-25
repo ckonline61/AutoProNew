@@ -8,6 +8,9 @@ import { UserRole } from '../types';
 
 const router = Router();
 
+// Public endpoint — active coupons visible in app without login
+router.get('/public', couponController.getPublicActive);
+
 router.use(authenticate);
 
 // Authenticated customer/any user can validate a coupon
