@@ -4,6 +4,7 @@ import { config } from './config';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { realtimeService } from './services/realtime.service';
 import { logger } from './utils/logger';
+import { seedDefaultConfigs } from './config/seed-config';
 
 /**
  * Start the Auto Pro Backend server.
@@ -15,6 +16,9 @@ const startServer = async (): Promise<void> => {
   try {
     // Connect to database
     await connectDatabase();
+
+    // Seed default app configs (safe to call multiple times)
+    await seedDefaultConfigs();
 
     // Create HTTP server & initialize WebSocket
     const server = http.createServer(app);

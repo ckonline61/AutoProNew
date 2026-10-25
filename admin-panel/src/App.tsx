@@ -12,6 +12,7 @@ import PaymentsPage from './pages/PaymentsPage';
 import CouponsPage from './pages/CouponsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import SettingsPage from './pages/SettingsPage';
+import AppCustomizationPage from './pages/AppCustomizationPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -32,6 +33,7 @@ function AppRoutes() {
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="customization" element={<AppCustomizationPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
