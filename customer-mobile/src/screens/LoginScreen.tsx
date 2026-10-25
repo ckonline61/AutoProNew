@@ -27,7 +27,7 @@ import type { AuthStackParamList } from '../navigation/types';
 WebBrowser.maybeCompleteAuthSession();
 
 // ⚠️ Replace with your actual Google OAuth Web Client ID from Google Cloud Console
-const GOOGLE_WEB_CLIENT_ID = 'GOOGLE_WEB_CLIENT_ID_PLACEHOLDER.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID = '403346240734-f0rit8p04e5jmq8uilf80ph0enp847jn.apps.googleusercontent.com';
 
 const LOGO_IMAGE = require('../../assets/logo.jpg');
 type Props = Partial<NativeStackScreenProps<AuthStackParamList, 'Login'>> & {

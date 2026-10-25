@@ -49,7 +49,7 @@
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
-          "apiKey": "GOOGLE_MAPS_API_KEY_PLACEHOLDER"
+          "apiKey": "AIzaSyBZzHcfqByEtuDJ4MJ2ppsxBT0ucVQgs38"
         }
       }
     },
@@ -75,7 +75,7 @@
       [
         "react-native-maps",
         {
-          "googleMapsApiKey": "GOOGLE_MAPS_API_KEY_PLACEHOLDER"
+          "googleMapsApiKey": "AIzaSyBZzHcfqByEtuDJ4MJ2ppsxBT0ucVQgs38"
         }
       ]
     ],
