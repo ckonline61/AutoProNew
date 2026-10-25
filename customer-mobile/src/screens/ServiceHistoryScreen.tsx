@@ -16,44 +16,7 @@ import { useCustomerData } from '../contexts/CustomerDataContext';
 import { Booking } from '../types';
 import { useNavigation } from '@react-navigation/native';
 
-const FALLBACK_HISTORY = [
-  {
-    id: 'hist_101',
-    serviceName: 'Comprehensive Periodic Service',
-    scheduledDate: '24 Sep 2026',
-    scheduledTime: '10:00 AM - 12:00 PM',
-    vehicleDetails: { brand: 'Hyundai', model: 'Creta SX(O)', registrationNumber: 'MH 12 AB 4589' },
-    vehicleId: 'veh_1',
-    totalAmount: 2999,
-    serviceType: 'DOORSTEP',
-    status: 'COMPLETED',
-    mechanic: { name: 'Rajesh Sharma', rating: 4.9 },
-  },
-  {
-    id: 'hist_102',
-    serviceName: 'Complete High-Cool AC Service',
-    scheduledDate: '15 Jul 2026',
-    scheduledTime: '02:00 PM - 04:00 PM',
-    vehicleDetails: { brand: 'Hyundai', model: 'Creta SX(O)', registrationNumber: 'MH 12 AB 4589' },
-    vehicleId: 'veh_1',
-    totalAmount: 1899,
-    serviceType: 'WORKSHOP',
-    status: 'COMPLETED',
-    mechanic: { name: 'Amit Verma', rating: 4.8 },
-  },
-  {
-    id: 'hist_103',
-    serviceName: 'Front Brake Pads Replacement',
-    scheduledDate: '28 Mar 2026',
-    scheduledTime: '03:30 PM - 05:00 PM',
-    vehicleDetails: { brand: 'Tata', model: 'Nexon EV Empowered', registrationNumber: 'MH 14 DE 8921' },
-    vehicleId: 'veh_2',
-    totalAmount: 2450,
-    serviceType: 'DOORSTEP',
-    status: 'COMPLETED',
-    mechanic: { name: 'Sanjay Patil', rating: 4.7 },
-  },
-];
+
 
 export const ServiceHistoryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -65,12 +28,7 @@ export const ServiceHistoryScreen: React.FC = () => {
     [bookings]
   );
 
-  const allCompletedHistory = useMemo(() => {
-    if (completedFromContext.length > 0) {
-      return completedFromContext;
-    }
-    return FALLBACK_HISTORY as unknown as Booking[];
-  }, [completedFromContext]);
+  const allCompletedHistory = completedFromContext;
 
   // Vehicle selector state
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('ALL');

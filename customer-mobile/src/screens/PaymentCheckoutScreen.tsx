@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { useCustomerData } from '../contexts/CustomerDataContext';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'PaymentCheckout'>;
 
-type PaymentMethodType = 'UPI' | 'CARD' | 'NET_BANKING';
+type PaymentMethodType = 'UPI' | 'CARD' | 'NET_BANKING' | 'COD';
 
 interface PaymentOption {
   id: PaymentMethodType;
@@ -30,23 +30,30 @@ interface PaymentOption {
 
 const PAYMENT_METHODS: PaymentOption[] = [
   {
+    id: 'COD',
+    title: 'Pay at Service Completion',
+    subtitle: 'Cash or UPI directly to mechanic after job done',
+    icon: 'handshake',
+    badges: ['Cash', 'UPI', 'QR Code'],
+  },
+  {
     id: 'UPI',
     title: 'UPI (Google Pay, PhonePe, Paytm)',
-    subtitle: 'Instant transfer via any UPI App or VPA ID',
+    subtitle: 'Instant transfer via any UPI App or VPA ID (Coming soon via Razorpay)',
     icon: 'lightning-bolt-circle',
     badges: ['GPay', 'PhonePe', 'Paytm', 'BHIM'],
   },
   {
     id: 'CARD',
     title: 'Credit / Debit Card',
-    subtitle: 'Visa, MasterCard, RuPay & Diners Club',
+    subtitle: 'Visa, MasterCard, RuPay & Diners Club (Coming soon via Razorpay)',
     icon: 'credit-card-outline',
     badges: ['Visa', 'MasterCard', 'RuPay'],
   },
   {
     id: 'NET_BANKING',
     title: 'Net Banking',
-    subtitle: 'All Indian banks (HDFC, SBI, ICICI, Axis...)',
+    subtitle: 'All Indian banks (HDFC, SBI, ICICI, Axis...) (Coming soon via Razorpay)',
     icon: 'bank-outline',
     badges: ['HDFC', 'SBI', 'ICICI'],
   },
@@ -56,7 +63,7 @@ export const PaymentCheckoutScreen: React.FC<Props> = ({ route, navigation }) =>
   const { bookingId, amount, serviceName } = route.params;
   const { bookings } = useCustomerData();
 
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('UPI');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('COD');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   // Find booking details if available
@@ -74,28 +81,29 @@ export const PaymentCheckoutScreen: React.FC<Props> = ({ route, navigation }) =>
   const gst = Math.round(taxable * 0.18);
   const finalTotal = taxable + gst;
 
-  const handlePayViaRazorpay = () => {
+  const handleConfirmPayment = async () => {
     if (isProcessing) return;
-    setIsProcessing(true);
 
-    // Simulate secure Razorpay checkout gateway response
-    setTimeout(() => {
-      setIsProcessing(false);
+    if (selectedMethod === 'COD') {
+      // COD: Just confirm booking, pay later
       Alert.alert(
-        'Payment Successful!',
-        `₹${finalTotal} received successfully.\n\nTransaction ID: TXN_RZP_${Date.now().toString().slice(-8)}\nPayment Method: ${selectedMethod}`,
+        '✅ Booking Confirmed!',
+        `Your booking is confirmed.\n\nPayment: ₹${finalTotal} to be paid at service completion.\n\nYour mechanic will collect payment (Cash/UPI) after the job is done.`,
         [
-          {
-            text: 'View Tax Invoice',
-            onPress: () => navigation.replace('InvoiceDetail', { bookingId }),
-          },
           {
             text: 'Track Booking',
             onPress: () => navigation.replace('BookingDetail', { bookingId, booking }),
           },
         ]
       );
-    }, 1500);
+    } else {
+      // Online payment — coming soon
+      Alert.alert(
+        '🚀 Online Payment Coming Soon!',
+        'UPI / Card / Net Banking via Razorpay will be available shortly.\n\nFor now, please select "Pay at Service Completion" to confirm your booking.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   return (
@@ -254,7 +262,7 @@ export const PaymentCheckoutScreen: React.FC<Props> = ({ route, navigation }) =>
         <View style={styles.securityRow}>
           <Ionicons name="lock-closed" size={16} color={COLORS.success} />
           <Text style={styles.securityText}>
-            End-to-end encrypted • 256-bit SSL secured Razorpay gateway
+            Secure & Trusted • 256-bit SSL • Auto Pro Verified
           </Text>
         </View>
       </ScrollView>
@@ -263,7 +271,7 @@ export const PaymentCheckoutScreen: React.FC<Props> = ({ route, navigation }) =>
       <View style={styles.stickyFooter}>
         <TouchableOpacity
           style={[styles.payButton, isProcessing && styles.payButtonDisabled]}
-          onPress={handlePayViaRazorpay}
+          onPress={handleConfirmPayment}
           disabled={isProcessing}
           activeOpacity={0.85}
         >
@@ -271,7 +279,7 @@ export const PaymentCheckoutScreen: React.FC<Props> = ({ route, navigation }) =>
             <ActivityIndicator size="small" color={COLORS.white} />
           ) : (
             <>
-              <Text style={styles.payButtonText}>Pay ₹{finalTotal} via Razorpay</Text>
+              <Text style={styles.payButtonText}>{selectedMethod === 'COD' ? 'Confirm Booking' : 'Pay ₹' + finalTotal + ' via Razorpay'}</Text>
               <Ionicons name="shield-checkmark" size={18} color={COLORS.white} />
             </>
           )}
