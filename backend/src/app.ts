@@ -14,12 +14,25 @@ import apiRoutes from './routes';
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// CORS must come BEFORE helmet
 app.use(cors({
-  origin: config.cors.origin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    const allowed = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim());
+    // If CORS_ORIGIN not set or origin is in allowed list, allow it
+    if (allowed.length === 0 || allowed.includes(origin) || allowed.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS not allowed: ' + origin));
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  optionsSuccessStatus: 200,
 }));
+// Security middleware (after CORS)
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // Rate limiting (disabled in test environment)
 if (config.env !== 'test') {
