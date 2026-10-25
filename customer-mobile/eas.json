@@ -21,7 +21,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://YOUR_CLOUD_RUN_URL.a.run.app/api/v1"
+        "EXPO_PUBLIC_API_BASE_URL": "https://auto-pro-backend-403346240734.asia-south1.run.app/api/v1"
       }
     },
     "production": {
@@ -30,7 +30,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://YOUR_CLOUD_RUN_URL.a.run.app/api/v1"
+        "EXPO_PUBLIC_API_BASE_URL": "https://auto-pro-backend-403346240734.asia-south1.run.app/api/v1"
       }
     }
   },
