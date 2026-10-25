@@ -223,7 +223,6 @@ export class AuthService {
 
     logger.info(`User logged out successfully: ${userId}`);
   }
-}
 
   /**
    * Google Sign-In: verify idToken with Google, create/find user, return JWT tokens.
@@ -265,8 +264,6 @@ export class AuthService {
     let isNewUser = false;
 
     if (!user) {
-      // Create new user from Google account
-      // Generate a random phone placeholder (user can update later)
       const randomPhone = `google_${googleId.slice(-10)}`;
       const randomPassword = await this.hashPassword(`google_${googleId}_${Date.now()}`);
 
@@ -278,7 +275,7 @@ export class AuthService {
         role: UserRole.CUSTOMER,
         avatar: picture || undefined,
         isActive: true,
-        isVerified: true, // Google already verified the email
+        isVerified: true,
         deviceTokens: [],
         refreshTokens: [],
       });
@@ -288,7 +285,6 @@ export class AuthService {
       if (!user.isActive) {
         throw new UnauthorizedError('Account has been deactivated');
       }
-      // Update avatar if not set
       if (!user.avatar && picture) {
         user.avatar = picture;
       }
