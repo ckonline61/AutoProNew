@@ -26,7 +26,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.post('/auth/login', { email, password });
       const data = res.data?.data;
       const u = data?.user;
-      if (!u || (u.role !== 'admin' && u.role !== 'super_admin')) {
+      const role = (u?.role || '').toUpperCase();
+      if (!u || (role !== 'ADMIN' && role !== 'SUPER_ADMIN')) {
         throw new Error('Access denied. Admin account required.');
       }
       const tk = data?.tokens?.accessToken;
