@@ -37,6 +37,10 @@ import { AppConfig } from '../src/models/app-config.model';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/auto-pro-dev';
 
+// Use Google DNS to resolve SRV records (ISP DNS blocks SRV lookups)
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 async function seed() {
   console.log('🌱 Auto Pro Seed Script Starting...');
   console.log(`📡 Connecting to: ${MONGODB_URI.replace(/:([^@]+)@/, ':***@')}`);
