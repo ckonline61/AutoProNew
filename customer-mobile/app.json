@@ -29,7 +29,7 @@
     },
     "android": {
       "package": "com.autopro.customer",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#DC2626"
@@ -43,8 +43,7 @@
         "android.permission.INTERNET",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -59,11 +58,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
+        "projectId": "a5c96d22-285d-4e9b-8932-9f74a5c4ba89"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/REPLACE_WITH_YOUR_EAS_PROJECT_ID"
-    }
+    "owner": "autopro2026"
   }
 }
