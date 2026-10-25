@@ -32,9 +32,10 @@ export const connectDatabase = async (): Promise<void> => {
       // Connection pool settings
       maxPoolSize: 10,
       minPoolSize: 2,
-      // Timeouts
-      serverSelectionTimeoutMS: 5000,
+      // Timeouts — increased for Cloud Run cold start
+      serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
       // Buffering
       bufferCommands: false,
     });

@@ -8,7 +8,7 @@
 set -e  # Exit on any error
 
 # ─── CONFIG — Edit these before running ───────────────────────
-PROJECT_ID="auto-pro-prod"           # Your Google Cloud Project ID
+PROJECT_ID="project-480b7f3b-a6c4-46c2-826"  # Google Cloud Project ID
 REGION="asia-south1"                 # Mumbai region (closest to India)
 SERVICE_NAME="auto-pro-backend"      # Cloud Run service name
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"

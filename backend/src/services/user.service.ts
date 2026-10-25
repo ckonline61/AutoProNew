@@ -85,4 +85,25 @@ export class UserService {
   }
 }
 
+  /**
+   * Save a push notification device token for the user.
+   * Avoids duplicates. Keeps latest 5 tokens max.
+   */
+  public async saveDeviceToken(userId: string, token: string): Promise<void> {
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { deviceTokens: token },
+      },
+      { new: true }
+    );
+    // Keep max 5 tokens per user (trim oldest if exceeded)
+    const user = await User.findById(userId);
+    if (user && user.deviceTokens.length > 5) {
+      user.deviceTokens = user.deviceTokens.slice(-5);
+      await user.save();
+    }
+  }
+}
+
 export const userService = new UserService();

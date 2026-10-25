@@ -44,4 +44,22 @@ export const userController = {
     await userService.changePassword(userId, currentPassword, newPassword);
     res.status(200).json(apiResponse.success(null, 'Password changed successfully'));
   }),
+  /**
+   * Save push notification device token.
+   */
+  saveDeviceToken: asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?._id?.toString() || (req.user as { id?: string } | undefined)?.id;
+    if (!userId) {
+      throw new UnauthorizedError('User is not authenticated');
+    }
+
+    const { token } = req.body as { token: string };
+    if (!token || typeof token !== 'string') {
+      res.status(400).json(apiResponse.error('Token is required'));
+      return;
+    }
+
+    await userService.saveDeviceToken(userId, token);
+    res.status(200).json(apiResponse.success(null, 'Device token saved'));
+  }),
 };

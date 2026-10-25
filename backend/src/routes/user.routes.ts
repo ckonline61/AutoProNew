@@ -36,4 +36,10 @@ router.put(
   userController.changePassword
 );
 
+/**
+ * POST /api/v1/users/device-token
+ * Save push notification device token.
+ */
+router.post('/device-token', userController.saveDeviceToken);
+
 export default router;

@@ -13,6 +13,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { registerForPushNotifications, setupNotificationListeners } from './utils/pushNotifications';
+import api from './config/api';
 
 import { COLORS, SPACING } from './theme';
 import type {
@@ -62,6 +64,24 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authNotice, setAuthNotice] = useState('');
+
+  // Push notifications setup
+  const cleanupPush = useRef<(() => void) | undefined>(undefined);
+
+  useEffect(() => {
+    // Register push token
+    registerForPushNotifications().then(async (token) => {
+      if (token) {
+        try {
+          await api.post('/users/device-token', { token, platform: 'android' });
+        } catch (e) {
+          console.log('[Push] Token save failed:', e);
+        }
+      }
+    });
+    cleanupPush.current = setupNotificationListeners();
+    return () => cleanupPush.current?.();
+  }, []);
 
   // Workspace data state
   const [profile, setProfile] = useState<Profile | null>(null);

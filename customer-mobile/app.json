@@ -42,8 +42,10 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
-      ]
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro"
@@ -54,8 +56,20 @@
         {
           "locationWhenInUsePermission": "Allow Auto Pro to access your location to find nearby mechanics and track your service."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#DC2626",
+          "sounds": []
+        }
       ]
     ],
+    "notification": {
+      "icon": "./assets/adaptive-icon.png",
+      "color": "#DC2626"
+    },
     "extra": {
       "eas": {
         "projectId": "a5c96d22-285d-4e9b-8932-9f74a5c4ba89"

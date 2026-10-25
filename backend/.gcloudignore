@@ -1,0 +1,41 @@
+# This file specifies files that are NOT uploaded to Google Cloud Build
+# See: https://cloud.google.com/sdk/gcloud/reference/topic/gcloudignore
+
+.gcloudignore
+
+# Git
+.git
+.gitignore
+
+# Node modules - installed during Docker build
+node_modules/
+
+# Local env files - never upload secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+jest.config.*
+coverage/
+
+# Dev logs
+*.log
+logs/
+
+# TypeScript build cache
+dist/
+build/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+type PDFDocumentType = InstanceType<typeof PDFDocument>;
 import { IInvoice } from '../models/invoice.model';
 import { IUser } from '../models/user.model';
 import { IBooking } from '../models/booking.model';
@@ -14,7 +15,7 @@ export class PdfService {
     booking: IBooking
   ): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
-      let doc: PDFDocument;
+      let doc: PDFDocumentType;
       try {
         doc = new PDFDocument({ margin: 50, size: 'A4' });
       } catch {

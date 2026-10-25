@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install ALL dependencies (including devDeps for TypeScript build)
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts
 
 # Copy source code
 COPY tsconfig.json ./
@@ -29,7 +29,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install ONLY production dependencies (no devDeps = smaller image)
-RUN npm ci --omit=dev --ignore-scripts && \
+RUN npm install --omit=dev --ignore-scripts && \
     npm cache clean --force
 
 # Copy compiled JS from builder stage
