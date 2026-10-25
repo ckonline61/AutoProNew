@@ -15,6 +15,7 @@ interface AuthContextType {
   isPreview: boolean;
   enterPreview: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  googleLogin: (idToken: string) => Promise<{ success: boolean; message?: string }>;
   register: (name: string, email: string, phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   loadStoredToken: () => Promise<void>;
@@ -87,6 +88,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     catch (error) { return { success: false, message: errorMessage(error) }; }
     finally { setIsLoading(false); }
   };
+  const googleLogin = async (idToken: string) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/auth/google', { idToken });
+      const data = response.data?.data;
+      // Google users might not have a standard customer role enforced on first login
+      const userData = data?.user;
+      if (!userData) throw new Error('Invalid response from server.');
+      const verifiedUser: User = { ...userData, id: userData.id || userData._id || '' };
+      if (typeof data?.tokens?.accessToken !== 'string' || typeof data?.tokens?.refreshToken !== 'string') {
+        throw new Error('The server returned an invalid login response.');
+      }
+      await AsyncStorage.multiSet([
+        [STORAGE_KEYS.AUTH_TOKEN, data.tokens.accessToken],
+        [STORAGE_KEYS.REFRESH_TOKEN, data.tokens.refreshToken],
+        [STORAGE_KEYS.USER_DATA, JSON.stringify(verifiedUser)],
+      ]);
+      setUser(verifiedUser);
+      setToken(data.tokens.accessToken);
+      setIsPreview(false);
+      return { success: true };
+    } catch (error) { return { success: false, message: errorMessage(error) }; }
+    finally { setIsLoading(false); }
+  };
   const register = async (name: string, email: string, phone: string, password: string) => {
     setIsLoading(true);
     try {
@@ -102,7 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch { /* Local logout must work offline. */ }
     finally { await clearSession(); }
   };
-  return <AuthContext.Provider value={{ user, token, isAuthenticated: !!user && (!!token || isPreview), isLoading, isRestoring, isPreview, enterPreview, login, register, logout, loadStoredToken }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, token, isAuthenticated: !!user && (!!token || isPreview), isLoading, isRestoring, isPreview, enterPreview, login, googleLogin, register, logout, loadStoredToken }}>{children}</AuthContext.Provider>;
 };
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);

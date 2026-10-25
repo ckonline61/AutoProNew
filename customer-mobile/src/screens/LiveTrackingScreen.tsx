@@ -8,9 +8,12 @@ import {
   Linking,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { Button, Card, Badge, Avatar, RatingStars } from '../components/ui';
 import api from '../config/api';
@@ -73,6 +76,11 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
   const [distanceKm, setDistanceKm] = useState('1.8');
   const [loading, setLoading] = useState(true);
 
+  // Map state
+  const mapRef = useRef<MapView>(null);
+  const [customerLocation, setCustomerLocation] = useState<{latitude: number; longitude: number} | null>(null);
+  const [mechanicLocation, setMechanicLocation] = useState<{latitude: number; longitude: number} | null>(null);
+
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /** Fetch booking data and update state */
@@ -93,6 +101,11 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
           if (mechanic.name) setMechanicName(mechanic.name);
           if (typeof mechanic.rating === 'number') setMechanicRating(mechanic.rating);
           if (mechanic.phone) setMechanicPhone(mechanic.phone);
+          // Real mechanic location from backend
+          if (mechanic.currentLocation?.coordinates) {
+            const [lng, lat] = mechanic.currentLocation.coordinates;
+            setMechanicLocation({ latitude: lat, longitude: lng });
+          }
         }
 
         // ETA / distance if provided by API
@@ -119,6 +132,21 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId]);
+
+  // Get customer's current location for map
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setCustomerLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      // Simulate mechanic ~500m away (until real location comes from backend)
+      setMechanicLocation({
+        latitude: loc.coords.latitude + 0.005,
+        longitude: loc.coords.longitude + 0.004,
+      });
+    })();
+  }, []);
 
   const handleCallMechanic = () => {
     const phone = mechanicPhone ?? '';
@@ -168,42 +196,59 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Main Map View (Stylized Simulation) */}
+      {/* Real Google Maps */}
       <View style={styles.mapContainer}>
-        {/* Map Grid Background Roads */}
-        <View style={styles.mapGrid}>
-          {/* Main Highway Line */}
-          <View style={styles.highwayHorizontal} />
-          <View style={styles.highwayVertical} />
-          <View style={styles.streetDiagonal} />
+        {customerLocation ? (
+          <MapView
+            ref={mapRef}
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={{
+              latitude: customerLocation.latitude,
+              longitude: customerLocation.longitude,
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            }}
+            showsUserLocation={true}
+            showsMyLocationButton={false}
+            showsTraffic={true}
+          >
+            {/* Customer Location Marker */}
+            <Marker
+              coordinate={customerLocation}
+              title="Your Location"
+              pinColor={COLORS.primary}
+            />
 
-          {/* Dotted Route Trajectory */}
-          <View style={styles.routeTraceLine} />
+            {/* Mechanic Location Marker */}
+            {mechanicLocation && (
+              <Marker
+                coordinate={mechanicLocation}
+                title={mechanicName}
+                description="Your mechanic"
+              >
+                <View style={styles.mechanicMapMarker}>
+                  <Ionicons name="car-sport" size={18} color={COLORS.white} />
+                </View>
+              </Marker>
+            )}
 
-          {/* Destination Customer Marker */}
-          <View style={styles.destinationMarker}>
-            <View style={styles.destinationPulse} />
-            <View style={styles.destinationPin}>
-              <Ionicons name="home" size={16} color={COLORS.white} />
-            </View>
-            <View style={styles.destinationCallout}>
-              <Text style={styles.calloutText}>Your Location</Text>
-            </View>
+            {/* Route line between mechanic and customer */}
+            {mechanicLocation && (
+              <Polyline
+                coordinates={[mechanicLocation, customerLocation]}
+                strokeColor={COLORS.primary}
+                strokeWidth={3}
+                lineDashPattern={[8, 4]}
+              />
+            )}
+          </MapView>
+        ) : (
+          <View style={styles.mapPlaceholder}>
+            <Ionicons name="map-outline" size={48} color={COLORS.gray400} />
+            <Text style={styles.mapPlaceholderText}>Getting your location...</Text>
           </View>
-
-          {/* Mechanic Vehicle GPS Marker */}
-          <View style={styles.mechanicMarker}>
-            <View style={styles.mechanicPulseRing} />
-            <View style={styles.mechanicPin}>
-              <Ionicons name="car-sport" size={20} color={COLORS.white} />
-            </View>
-            <View style={styles.mechanicCallout}>
-              <Text style={styles.mechanicCalloutText}>
-                {mechanicName.split(' ')[0]} (TVS Pro)
-              </Text>
-            </View>
-          </View>
-        </View>
+        )}
 
         {/* Floating ETA Badge Overlay */}
         <View style={styles.etaOverlayCard}>
@@ -212,25 +257,43 @@ export const LiveTrackingScreen: React.FC<LiveTrackingScreenProps> = ({
           </View>
           <View>
             <Text style={styles.etaTitle}>ETA: {etaMinutes} min away</Text>
-            <Text style={styles.etaSub}>{distanceKm} km • Baner Highway Flow</Text>
+            <Text style={styles.etaSub}>{distanceKm} km • Live tracking</Text>
           </View>
         </View>
 
-        {/* Floating Map Controls */}
+        {/* Recenter Button */}
         <View style={styles.floatingControls}>
           <TouchableOpacity
             style={styles.floatingBtn}
-            onPress={() => Alert.alert('Recenter', 'Centered on mechanic current GPS location.')}
+            onPress={() => {
+              if (customerLocation && mapRef.current) {
+                mapRef.current.animateToRegion({
+                  latitude: customerLocation.latitude,
+                  longitude: customerLocation.longitude,
+                  latitudeDelta: 0.02,
+                  longitudeDelta: 0.02,
+                }, 500);
+              }
+            }}
             activeOpacity={0.8}
           >
             <Ionicons name="locate" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.floatingBtn}
-            onPress={() => Alert.alert('Traffic', 'Showing live highway traffic flow.')}
+            onPress={() => {
+              if (mechanicLocation && mapRef.current) {
+                mapRef.current.animateToRegion({
+                  latitude: mechanicLocation.latitude,
+                  longitude: mechanicLocation.longitude,
+                  latitudeDelta: 0.02,
+                  longitudeDelta: 0.02,
+                }, 500);
+              }
+            }}
             activeOpacity={0.8}
           >
-            <Ionicons name="layers" size={20} color={COLORS.textPrimary} />
+            <Ionicons name="car-sport-outline" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -388,17 +451,35 @@ const styles = StyleSheet.create({
   // Map Area
   mapContainer: {
     flex: 1,
-    backgroundColor: '#E5E7EB',
     position: 'relative',
     overflow: 'hidden',
   },
-  mapGrid: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#F0F2F5',
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    backgroundColor: '#E8F4FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  mapPlaceholderText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  mechanicMapMarker: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    padding: 8,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
   },
   highwayHorizontal: {
     position: 'absolute',

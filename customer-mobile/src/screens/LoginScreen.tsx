@@ -14,11 +14,20 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { COLORS as CONST_COLORS } from '../constants';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
+
+// Required for expo-auth-session on Android
+WebBrowser.maybeCompleteAuthSession();
+
+// ⚠️ Replace with your actual Google OAuth Web Client ID from Google Cloud Console
+const GOOGLE_WEB_CLIENT_ID = 'GOOGLE_WEB_CLIENT_ID_PLACEHOLDER.apps.googleusercontent.com';
 
 const LOGO_IMAGE = require('../../assets/logo.jpg');
 type Props = Partial<NativeStackScreenProps<AuthStackParamList, 'Login'>> & {
@@ -28,8 +37,32 @@ type Props = Partial<NativeStackScreenProps<AuthStackParamList, 'Login'>> & {
 type AuthMode = 'phone' | 'email';
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { login, isLoading, enterPreview } = useAuth();
+  const { login, googleLogin, isLoading, enterPreview } = useAuth();
   const [authMode, setAuthMode] = useState<AuthMode>('phone');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // expo-auth-session Google provider
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: makeRedirectUri({ scheme: 'com.autopro.customer' }),
+  });
+
+  // Handle Google OAuth response
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      if (id_token) {
+        setGoogleLoading(true);
+        googleLogin(id_token).then((result) => {
+          if (!result.success) {
+            Alert.alert('Google Sign-In Failed', result.message || 'Please try again.');
+          }
+        }).finally(() => setGoogleLoading(false));
+      }
+    } else if (response?.type === 'error') {
+      Alert.alert('Google Sign-In Error', response.error?.message || 'Something went wrong.');
+    }
+  }, [response]);
 
   // Email form state
   const [email, setEmail] = useState('');
@@ -100,17 +133,24 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     enterPreview();
   };
 
+  const handleGoogleSignIn = async () => {
+    if (!request) {
+      Alert.alert('Not Ready', 'Google Sign-In is loading. Please try again in a moment.');
+      return;
+    }
+    await promptAsync();
+  };
+
   const handleSocialLogin = (provider: 'Google' | 'Apple') => {
+    if (provider === 'Google') {
+      void handleGoogleSignIn();
+      return;
+    }
+    // Apple Sign-In — future implementation
     Alert.alert(
-      `${provider} Sign-In`,
-      `Would you like to enter demo mode with ${provider}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Continue as Guest',
-          onPress: () => enterPreview(),
-        },
-      ]
+      'Apple Sign-In',
+      'Apple Sign-In coming soon! Please use Email or Google for now.',
+      [{ text: 'OK' }]
     );
   };
 
@@ -339,12 +379,19 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         {/* Social Login Buttons: Google and Apple */}
         <View style={styles.socialButtonsRow}>
           <TouchableOpacity
-            style={styles.socialButton}
+            style={[styles.socialButton, (!request || googleLoading) && styles.socialButtonDisabled]}
             onPress={() => handleSocialLogin('Google')}
             activeOpacity={0.8}
+            disabled={!request || googleLoading}
           >
-            <Ionicons name="logo-google" size={20} color="#EA4335" />
-            <Text style={styles.socialButtonText}>Google</Text>
+            {googleLoading ? (
+              <ActivityIndicator size="small" color="#EA4335" />
+            ) : (
+              <Ionicons name="logo-google" size={20} color="#EA4335" />
+            )}
+            <Text style={styles.socialButtonText}>
+              {googleLoading ? 'Signing in...' : 'Google'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -616,6 +663,9 @@ const styles = StyleSheet.create({
     borderRadius: RADII.md,
     backgroundColor: COLORS.white,
     gap: SPACING.sm,
+  },
+  socialButtonDisabled: {
+    opacity: 0.6,
   },
   socialButtonText: {
     fontSize: 14,

@@ -3,6 +3,7 @@
     "name": "Auto Pro",
     "slug": "auto-pro-customer",
     "version": "1.0.0",
+    "scheme": "com.autopro.customer",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +30,7 @@
     },
     "android": {
       "package": "com.autopro.customer",
-      "versionCode": 2,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#DC2626"
@@ -45,7 +46,12 @@
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "GOOGLE_MAPS_API_KEY_PLACEHOLDER"
+        }
+      }
     },
     "web": {
       "bundler": "metro"
@@ -63,6 +69,13 @@
           "icon": "./assets/notification-icon.png",
           "color": "#DC2626",
           "sounds": []
+        }
+      ],
+      "expo-web-browser",
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": "GOOGLE_MAPS_API_KEY_PLACEHOLDER"
         }
       ]
     ],

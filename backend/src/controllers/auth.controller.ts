@@ -5,6 +5,26 @@ import { authService } from '../services/auth.service';
 
 export const authController = {
   /**
+   * POST /api/v1/auth/google
+   * Sign in or register using Google ID token.
+   */
+  googleSignIn: asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { idToken } = req.body as { idToken?: string };
+    if (!idToken || typeof idToken !== 'string') {
+      res.status(400).json(apiResponse.error('Google ID token is required'));
+      return;
+    }
+    const result = await authService.googleSignIn(idToken);
+    const statusCode = result.isNewUser ? 201 : 200;
+    res.status(statusCode).json(
+      apiResponse.success(
+        { tokens: result.tokens, user: result.user, isNewUser: result.isNewUser },
+        result.isNewUser ? 'Google account registered successfully' : 'Google sign-in successful'
+      )
+    );
+  }),
+
+  /**
    * Register a new customer user.
    */
   register: asyncHandler(async (req: Request, res: Response): Promise<void> => {

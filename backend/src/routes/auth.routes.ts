@@ -63,4 +63,10 @@ router.get(
   authController.getMe
 );
 
+/**
+ * POST /api/v1/auth/google
+ * Sign in / register with Google ID token.
+ */
+router.post('/google', authRateLimiter, authController.googleSignIn);
+
 export default router;

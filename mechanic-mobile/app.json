@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.autopro.mechanic",
-      "versionCode": 2,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A73E8"
