@@ -14,9 +14,9 @@ SERVICE_NAME="auto-pro-backend"      # Cloud Run service name
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
 
 # ─── Environment Variables — Fill these from your .env ────────
-MONGODB_URI="mongodb+srv://USER:PASS@cluster.mongodb.net/autopro"
-JWT_SECRET="your-64-char-jwt-secret"
-JWT_REFRESH_SECRET="your-64-char-refresh-secret"
+MONGODB_URI="mongodb+srv://autopro-admin:AutoPro%402026%23Secure@cluster0.wvirar.mongodb.net/autopro?retryWrites=true&w=majority&appName=Cluster0"
+JWT_SECRET="AutoPro-JWT-Prod-2026-xK9mP2nQvR8sT4wY6zA3bC5dE7fG1hJ"
+JWT_REFRESH_SECRET="AutoPro-Refresh-Prod-2026-yL0nQ3oRwS5tU7vX9zB1cD4eF6gH2iK"
 CORS_ORIGIN="https://${SERVICE_NAME}-xxxx-as.a.run.app"
 RAZORPAY_KEY_ID="rzp_live_XXXXXXXXX"
 RAZORPAY_KEY_SECRET="XXXXXXXXXXXXXXXXXX"

@@ -22,6 +22,7 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { UserRole, ListingStatus, FuelType } from '../src/types';
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 import { User } from '../src/models/user.model';
@@ -29,9 +30,10 @@ import { ServiceCategory } from '../src/models/service-category.model';
 import { Service } from '../src/models/service.model';
 import { SparePart } from '../src/models/spare-part.model';
 import { UsedCarListing } from '../src/models/used-car-listing.model';
-import { Coupon } from '../src/models/coupon.model';
+import { Coupon, CouponDiscountType } from '../src/models/coupon.model';
 import { FeatureFlag } from '../src/models/feature-flag.model';
 import { AppConfig } from '../src/models/app-config.model';
+// FeatureFlag and AppConfig registered via dynamic mongoose.model() below
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/auto-pro-dev';
 
@@ -52,7 +54,7 @@ async function seed() {
       email: 'admin@autopro.in',
       phone: '9000000001',
       password: hashedPassword,
-      role: 'ADMIN',
+      role: UserRole.ADMIN,
       isActive: true,
       isVerified: true,
     });
@@ -70,7 +72,7 @@ async function seed() {
       email: 'customer@autopro.in',
       phone: '9000000002',
       password: hashedPassword,
-      role: 'CUSTOMER',
+      role: UserRole.CUSTOMER,
       isActive: true,
       isVerified: true,
     });
@@ -231,17 +233,17 @@ async function seed() {
 
   if (seller) {
     const usedCars = [
-      { brand: 'Honda', model: 'City ZX CVT', variant: 'ZX CVT Petrol', year: 2021, fuelType: 'PETROL', mileage: 32000, price: 1140000, negotiable: true, description: 'Single owner, fully serviced at Honda authorized center, accident-free. Sunroof, leather seats, all original accessories.', images: ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600'], location: { city: 'Pune', state: 'Maharashtra' }, transmission: 'AUTOMATIC' },
-      { brand: 'Tata', model: 'Harrier XZA+', variant: 'XZA+ Dark Kryotec', year: 2022, fuelType: 'DIESEL', mileage: 28500, price: 1890000, negotiable: false, description: 'First owner, warranty active till 2025, fully loaded. ADAS, panoramic sunroof, all features intact.', images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600'], location: { city: 'Mumbai', state: 'Maharashtra' }, transmission: 'AUTOMATIC' },
-      { brand: 'Maruti Suzuki', model: 'Swift VXI', variant: 'VXI AMT', year: 2020, fuelType: 'PETROL', mileage: 45000, price: 695000, negotiable: true, description: 'Family car, all service records available, 2nd owner. Good condition, newly replaced tyres.', images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600'], location: { city: 'Bangalore', state: 'Karnataka' }, transmission: 'AUTOMATIC' },
-      { brand: 'Hyundai', model: 'Creta SX(O)', variant: 'SX(O) 1.5 Turbo', year: 2023, fuelType: 'PETROL', mileage: 19200, price: 1650000, negotiable: false, description: 'Like new condition, 1st owner, all accessories included. DCT automatic, sunroof, connected features.', images: ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600'], location: { city: 'Delhi', state: 'Delhi' }, transmission: 'AUTOMATIC' },
-      { brand: 'Toyota', model: 'Innova Crysta 2.4 GX', variant: '2.4 GX MT 7-seater', year: 2019, fuelType: 'DIESEL', mileage: 78000, price: 1650000, negotiable: true, description: 'Fleet maintained, all service done at Toyota. 7-seater family MPV in excellent condition.', images: ['https://images.unsplash.com/photo-1543465077-db45d34b88a5?w=600'], location: { city: 'Hyderabad', state: 'Telangana' }, transmission: 'MANUAL' },
+      { brand: 'Honda', model: 'City ZX CVT', variant: 'ZX CVT Petrol', year: 2021, fuelType: FuelType.PETROL, mileage: 32000, price: 1140000, negotiable: true, description: 'Single owner, fully serviced at Honda authorized center, accident-free. Sunroof, leather seats, all original accessories.', images: ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600'], location: { city: 'Pune', state: 'Maharashtra' }, transmission: 'AUTOMATIC' },
+      { brand: 'Tata', model: 'Harrier XZA+', variant: 'XZA+ Dark Kryotec', year: 2022, fuelType: FuelType.DIESEL, mileage: 28500, price: 1890000, negotiable: false, description: 'First owner, warranty active till 2025, fully loaded. ADAS, panoramic sunroof, all features intact.', images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600'], location: { city: 'Mumbai', state: 'Maharashtra' }, transmission: 'AUTOMATIC' },
+      { brand: 'Maruti Suzuki', model: 'Swift VXI', variant: 'VXI AMT', year: 2020, fuelType: FuelType.PETROL, mileage: 45000, price: 695000, negotiable: true, description: 'Family car, all service records available, 2nd owner. Good condition, newly replaced tyres.', images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600'], location: { city: 'Bangalore', state: 'Karnataka' }, transmission: 'AUTOMATIC' },
+      { brand: 'Hyundai', model: 'Creta SX(O)', variant: 'SX(O) 1.5 Turbo', year: 2023, fuelType: FuelType.PETROL, mileage: 19200, price: 1650000, negotiable: false, description: 'Like new condition, 1st owner, all accessories included. DCT automatic, sunroof, connected features.', images: ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600'], location: { city: 'Delhi', state: 'Delhi' }, transmission: 'AUTOMATIC' },
+      { brand: 'Toyota', model: 'Innova Crysta 2.4 GX', variant: '2.4 GX MT 7-seater', year: 2019, fuelType: FuelType.DIESEL, mileage: 78000, price: 1650000, negotiable: true, description: 'Fleet maintained, all service done at Toyota. 7-seater family MPV in excellent condition.', images: ['https://images.unsplash.com/photo-1543465077-db45d34b88a5?w=600'], location: { city: 'Hyderabad', state: 'Telangana' }, transmission: 'MANUAL' },
     ];
 
     for (const car of usedCars) {
       const existing = await UsedCarListing.findOne({ brand: car.brand, model: car.model, year: car.year });
       if (!existing) {
-        await UsedCarListing.create({ ...car, sellerId: seller._id, status: 'ACTIVE', isActive: true, viewCount: 0 });
+        await UsedCarListing.create({ ...car, sellerId: seller._id, status: ListingStatus.ACTIVE, isActive: true, viewCount: 0 });
         console.log(`   ✅ ${car.year} ${car.brand} ${car.model}`);
       } else {
         console.log(`   ⏭️  ${car.brand} ${car.model} exists`);
@@ -254,7 +256,18 @@ async function seed() {
   const now = new Date();
   const future = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days
 
-  const coupons = [
+  const coupons: Array<{
+    code: string;
+    description: string;
+    discountType: CouponDiscountType;
+    discountValue: number;
+    minOrderAmount: number;
+    maxDiscountAmount?: number;
+    usageLimit: number;
+    validFrom: Date;
+    validTo: Date;
+    isActive: boolean;
+  }> = [
     { code: 'AUTOPRO20', description: 'Get 20% OFF on Periodic Service. Valid on all service bookings.', discountType: 'PERCENTAGE', discountValue: 20, minOrderAmount: 1499, maxDiscountAmount: 500, usageLimit: 100, validFrom: now, validTo: future, isActive: true },
     { code: 'PARTS15', description: 'Flat 15% OFF on all Spare Parts orders.', discountType: 'PERCENTAGE', discountValue: 15, minOrderAmount: 999, maxDiscountAmount: 300, usageLimit: 200, validFrom: now, validTo: future, isActive: true },
     { code: 'WELCOME500', description: 'Welcome discount — ₹500 OFF on your first booking!', discountType: 'FIXED', discountValue: 500, minOrderAmount: 1299, usageLimit: 1000, validFrom: now, validTo: future, isActive: true },
@@ -282,7 +295,7 @@ async function seed() {
     { key: 'razorpay_payments', name: 'Online Payments', description: 'Enable Razorpay online payment gateway', isActive: false },
   ];
 
-  const FeatureFlagModel = mongoose.model('FeatureFlag');
+  const FeatureFlagModel = FeatureFlag;
   for (const flag of flags) {
     const existing = await FeatureFlagModel.findOne({ key: flag.key });
     if (!existing) {
@@ -295,21 +308,21 @@ async function seed() {
 
   // ─── 8. App Config ──────────────────────────────────────────────────────────
   console.log('\n⚙️  Creating app config...');
-  const AppConfigModel = mongoose.model('AppConfig');
-  const configs = [
-    { key: 'app_version_android', value: '1.0.0', description: 'Minimum supported Android app version' },
-    { key: 'app_version_ios', value: '1.0.0', description: 'Minimum supported iOS app version' },
-    { key: 'support_phone', value: '+91 90000 00000', description: 'Customer support phone number' },
-    { key: 'support_email', value: 'support@autopro.in', description: 'Customer support email' },
-    { key: 'service_areas', value: 'Mumbai, Pune, Bangalore, Delhi, Hyderabad, Chennai', description: 'Active service cities' },
-    { key: 'booking_advance_days', value: '7', description: 'How many days in advance can a booking be made' },
+  const AppConfigModel = AppConfig as any; // value: Mixed causes TS overload issues
+  const configs: Array<{ key: string; value: string; type: 'STRING'; description: string }> = [
+    { key: 'app_version_android', value: '1.0.0', type: 'STRING', description: 'Minimum supported Android app version' },
+    { key: 'app_version_ios', value: '1.0.0', type: 'STRING', description: 'Minimum supported iOS app version' },
+    { key: 'support_phone', value: '+91 90000 00000', type: 'STRING', description: 'Customer support phone number' },
+    { key: 'support_email', value: 'support@autopro.in', type: 'STRING', description: 'Customer support email' },
+    { key: 'service_areas', value: 'Mumbai, Pune, Bangalore, Delhi, Hyderabad, Chennai', type: 'STRING', description: 'Active service cities' },
+    { key: 'booking_advance_days', value: '7', type: 'STRING', description: 'How many days in advance can a booking be made' },
   ];
 
   for (const cfg of configs) {
     const existing = await AppConfigModel.findOne({ key: cfg.key });
     if (!existing) {
-      await AppConfigModel.create(cfg);
-      console.log(`   ✅ ${cfg.key}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (AppConfigModel as any).create(cfg);      console.log(`   ✅ ${cfg.key}`);
     } else {
       console.log(`   ⏭️  ${cfg.key} exists`);
     }
