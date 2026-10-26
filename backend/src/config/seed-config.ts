@@ -1,9 +1,18 @@
 import { AppConfig } from '../models/app-config.model';
 
+type CfgType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON';
+
+interface SeedEntry {
+  key: string;
+  value: any;
+  type: CfgType;
+  description: string;
+}
+
 /**
  * Default App Config values — seeded on first startup if keys don't exist.
  */
-const DEFAULT_CONFIGS = [
+const DEFAULT_CONFIGS: SeedEntry[] = [
   {
     key: 'theme',
     value: {
