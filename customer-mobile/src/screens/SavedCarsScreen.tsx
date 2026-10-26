@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['3xl'],
+    paddingBottom: 100,
   },
   carsList: {
     gap: SPACING.lg,

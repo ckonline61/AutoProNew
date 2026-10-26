@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['3xl'],
+    paddingBottom: 100,
   },
   card: {
     marginBottom: SPACING.md,

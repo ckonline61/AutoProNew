@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
 
   // ── Header ──

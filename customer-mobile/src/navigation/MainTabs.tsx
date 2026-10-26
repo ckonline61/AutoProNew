@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList } from './types';
 import { HomeStack } from './HomeStack';
 import { BookingsStack } from './BookingsStack';
@@ -22,6 +23,11 @@ const TAB_ICONS: Record<string, { focused: keyof typeof Ionicons.glyphMap; unfoc
 };
 
 export const MainTabs: React.FC = () => {
+  const insets = useSafeAreaInsets();
+  // Ensure minimum bottom padding of 10, use safe area if available
+  const bottomPadding = Math.max(insets.bottom, 10);
+  const tabBarHeight = 56 + bottomPadding;
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -29,7 +35,11 @@ export const MainTabs: React.FC = () => {
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.gray400,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          ...styles.tabBar,
+          height: tabBarHeight,
+          paddingBottom: bottomPadding,
+        },
         tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: ({ focused, color, size }) => {
           const icons = TAB_ICONS[route.name];
@@ -72,8 +82,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
-    height: 60,
-    paddingBottom: 8,
     paddingTop: 6,
     elevation: 8,
     shadowColor: '#000',

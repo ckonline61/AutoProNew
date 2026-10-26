@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: SPACING['4xl'],
+    paddingBottom: 100,
   },
   heroBanner: {
     borderRadius: RADII.lg,
