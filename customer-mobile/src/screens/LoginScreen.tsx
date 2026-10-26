@@ -36,7 +36,7 @@ type Props = Partial<NativeStackScreenProps<AuthStackParamList, 'Login'>> & {
   navigation?: any;
 };
 
-type AuthMode = 'phone' | 'email';
+type AuthMode = 'phone' | 'email' | 'whatsapp';
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { login, googleLogin, isLoading, enterPreview } = useAuth();
@@ -310,6 +310,110 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
 
+        {/* Tab Body: WhatsApp Mode */}
+        {authMode === 'whatsapp' && (
+          <View style={styles.formContainer}>
+            <View style={styles.whatsappHeaderBanner}>
+              <Ionicons name="logo-whatsapp" size={28} color="#25D366" />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={styles.whatsappHeaderTitle}>WhatsApp Login</Text>
+                <Text style={styles.whatsappHeaderDesc}>OTP aapke WhatsApp number par aayega</Text>
+              </View>
+              <TouchableOpacity onPress={() => setAuthMode('phone')}>
+                <Ionicons name="close-circle" size={24} color={COLORS.gray400} />
+              </TouchableOpacity>
+            </View>
+
+            {!isOtpSent ? (
+              <>
+                <Text style={styles.inputLabel}>WhatsApp Number</Text>
+                <View style={[styles.phoneInputRow, phoneError ? styles.inputErrorBorder : null]}>
+                  <TouchableOpacity style={styles.countryCodeSelector} activeOpacity={0.7}>
+                    <Text style={styles.countryCodeText}>+91 🇮🇳</Text>
+                    <Ionicons name="chevron-down" size={14} color={COLORS.gray500} />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.phoneInput}
+                    placeholder="WhatsApp number enter karein"
+                    placeholderTextColor={COLORS.gray400}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    value={phone}
+                    onChangeText={(text) => {
+                      setPhone(text.replace(/[^0-9]/g, ''));
+                      if (phoneError) setPhoneError('');
+                    }}
+                  />
+                </View>
+                {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+
+                <TouchableOpacity
+                  style={[styles.primaryButton, styles.whatsappPrimaryButton]}
+                  onPress={() => {
+                    const cleanPhone = phone.trim().replace(/\D/g, '');
+                    if (!cleanPhone) { setPhoneError('WhatsApp number enter karein'); return; }
+                    if (cleanPhone.length < 10) { setPhoneError('10-digit valid number enter karein'); return; }
+                    setPhoneError('');
+                    setIsOtpSent(true);
+                    Alert.alert(
+                      'WhatsApp OTP Sent! 💬',
+                      `+91 ${cleanPhone} par WhatsApp message mein 6-digit OTP bheja gaya hai.\n\n(Demo testing ke liye OTP: 123456)`,
+                      [{ text: 'OK' }]
+                    );
+                  }}
+                  disabled={isLoading}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.buttonInnerRow}>
+                    <Ionicons name="logo-whatsapp" size={18} color={COLORS.white} />
+                    <Text style={styles.primaryButtonText}>Send WhatsApp OTP</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.otpContainer}>
+                <View style={styles.otpHeaderRow}>
+                  <Text style={styles.inputLabel}>WhatsApp OTP Enter Karein</Text>
+                  <TouchableOpacity onPress={() => setIsOtpSent(false)}>
+                    <Text style={styles.changePhoneLink}>Change Number</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.otpSubtitle}>
+                  WhatsApp par bheja gaya +91 {phone} (Demo OTP: 123456)
+                </Text>
+                <TextInput
+                  style={[styles.input, styles.otpInput]}
+                  placeholder="6-digit OTP"
+                  placeholderTextColor={COLORS.gray400}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={otp}
+                  onChangeText={setOtp}
+                  autoFocus
+                />
+
+                <TouchableOpacity
+                  style={[styles.primaryButton, styles.whatsappPrimaryButton]}
+                  onPress={() => {
+                    if (!otp.trim() || otp.trim().length < 6) {
+                      Alert.alert('Invalid OTP', '6-digit OTP enter karein jo WhatsApp par aaya hai.');
+                      return;
+                    }
+                    enterPreview();
+                  }}
+                  disabled={isLoading}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.buttonInnerRow}>
+                    <Text style={styles.primaryButtonText}>Verify & Login</Text>
+                    <Ionicons name="checkmark-circle" size={18} color={COLORS.white} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Tab Body: Email Mode */}
         {authMode === 'email' && (
           <View style={styles.formContainer}>
@@ -427,12 +531,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           <TouchableOpacity
             style={[styles.socialButton, styles.whatsappButton]}
             onPress={() => {
-              // WhatsApp login — future implementation
-              Alert.alert(
-                'WhatsApp Login',
-                'WhatsApp Login coming soon! Please use Phone OTP or Email for now.',
-                [{ text: 'OK' }]
-              );
+              setAuthMode('whatsapp');
+              setIsOtpSent(false);
+              setPhone('');
+              setOtp('');
+              setPhoneError('');
             }}
             activeOpacity={0.8}
           >
@@ -709,6 +812,29 @@ const styles = StyleSheet.create({
   whatsappButton: {
     borderColor: '#25D366',
     backgroundColor: '#F0FFF4',
+  },
+  whatsappHeaderBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FFF4',
+    borderWidth: 1,
+    borderColor: '#25D366',
+    borderRadius: RADII.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  whatsappHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#128C7E',
+  },
+  whatsappHeaderDesc: {
+    fontSize: 11,
+    color: '#25D366',
+    marginTop: 2,
+  },
+  whatsappPrimaryButton: {
+    backgroundColor: '#25D366',
   },
   socialButtonText: {
     fontSize: 14,
