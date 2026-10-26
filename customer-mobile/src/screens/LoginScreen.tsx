@@ -12,12 +12,14 @@ import {
   ScrollView,
   Alert,
   StatusBar,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfig } from '../contexts/ConfigContext';
 import { COLORS, TYPOGRAPHY, SPACING, RADII, SHADOWS } from '../theme';
 import { COLORS as CONST_COLORS } from '../constants';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -38,8 +40,19 @@ type AuthMode = 'phone' | 'email';
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { login, googleLogin, isLoading, enterPreview } = useAuth();
+  const { config, isFeatureEnabled } = useConfig();
   const [authMode, setAuthMode] = useState<AuthMode>('phone');
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Feature flags from remote config
+  const showGoogleLogin = isFeatureEnabled('feature_google_signin');
+  const showAppleLogin = isFeatureEnabled('feature_apple_signin');
+  const showWhatsAppLogin = isFeatureEnabled('feature_whatsapp_login');
+  const showEmailLogin = isFeatureEnabled('feature_email_login');
+  const showPhoneLogin = isFeatureEnabled('feature_phone_login');
+
+  // Check if any social login is visible
+  const hasSocialLogin = showGoogleLogin || showAppleLogin || showWhatsAppLogin;
 
   // expo-auth-session Google provider
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
@@ -369,15 +382,19 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
 
-        {/* Divider with "OR CONTINUE WITH" */}
+        {/* Divider with "OR CONTINUE WITH" — only if social logins visible */}
+        {hasSocialLogin && (
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
           <View style={styles.dividerLine} />
         </View>
+        )}
 
-        {/* Social Login Buttons: Google and Apple */}
+        {/* Social Login Buttons: conditionally rendered based on remote config */}
+        {hasSocialLogin && (
         <View style={styles.socialButtonsRow}>
+          {showGoogleLogin && (
           <TouchableOpacity
             style={[styles.socialButton, (!request || googleLoading) && styles.socialButtonDisabled]}
             onPress={() => handleSocialLogin('Google')}
@@ -393,7 +410,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               {googleLoading ? 'Signing in...' : 'Google'}
             </Text>
           </TouchableOpacity>
+          )}
 
+          {showAppleLogin && (
           <TouchableOpacity
             style={styles.socialButton}
             onPress={() => handleSocialLogin('Apple')}
@@ -402,7 +421,27 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <Ionicons name="logo-apple" size={22} color={COLORS.black} />
             <Text style={styles.socialButtonText}>Apple</Text>
           </TouchableOpacity>
+          )}
+
+          {showWhatsAppLogin && (
+          <TouchableOpacity
+            style={[styles.socialButton, styles.whatsappButton]}
+            onPress={() => {
+              // WhatsApp login — future implementation
+              Alert.alert(
+                'WhatsApp Login',
+                'WhatsApp Login coming soon! Please use Phone OTP or Email for now.',
+                [{ text: 'OK' }]
+              );
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+            <Text style={styles.socialButtonText}>WhatsApp</Text>
+          </TouchableOpacity>
+          )}
         </View>
+        )}
 
         {/* Register Navigation Prompt */}
         <View style={styles.registerRow}>
@@ -666,6 +705,10 @@ const styles = StyleSheet.create({
   },
   socialButtonDisabled: {
     opacity: 0.6,
+  },
+  whatsappButton: {
+    borderColor: '#25D366',
+    backgroundColor: '#F0FFF4',
   },
   socialButtonText: {
     fontSize: 14,

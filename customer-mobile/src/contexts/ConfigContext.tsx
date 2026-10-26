@@ -75,6 +75,10 @@ const DEFAULT_CONFIG: AppConfig = {
   homeSectionsOrder: ['banners', 'services', 'offers', 'recent_bookings'],
   features: {
     feature_google_signin: true,
+    feature_apple_signin: true,
+    feature_whatsapp_login: false,
+    feature_email_login: true,
+    feature_phone_login: true,
     feature_sos_button: true,
     feature_live_tracking: true,
     feature_razorpay: true,

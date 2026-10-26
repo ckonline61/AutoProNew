@@ -55,6 +55,30 @@ const DEFAULT_CONFIGS: SeedEntry[] = [
     description: 'Enable Google Sign-In on login screen',
   },
   {
+    key: 'feature_apple_signin',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Enable Apple Sign-In on login screen',
+  },
+  {
+    key: 'feature_whatsapp_login',
+    value: false,
+    type: 'BOOLEAN',
+    description: 'Enable WhatsApp Login on login screen',
+  },
+  {
+    key: 'feature_email_login',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Enable Email/Password login tab',
+  },
+  {
+    key: 'feature_phone_login',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Enable Phone OTP login tab',
+  },
+  {
     key: 'feature_sos_button',
     value: true,
     type: 'BOOLEAN',

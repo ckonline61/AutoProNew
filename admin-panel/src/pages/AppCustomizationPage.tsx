@@ -3,7 +3,7 @@ import api from '../api';
 import {
   Palette, Home, Zap, Wrench, Smartphone, Shield, Megaphone,
   Save, RefreshCw, Check, AlertCircle, Plus, Trash2, GripVertical,
-  Eye, EyeOff
+  Eye, EyeOff, LogIn
 } from 'lucide-react';
 
 // ===================== TYPES =====================
@@ -15,6 +15,7 @@ const TABS = [
   { id: 'theme', label: 'Theme', icon: Palette },
   { id: 'home', label: 'Home Screen', icon: Home },
   { id: 'features', label: 'Features', icon: Zap },
+  { id: 'login', label: 'Login Methods', icon: LogIn },
   { id: 'services', label: 'Services', icon: Wrench },
   { id: 'appinfo', label: 'App Info', icon: Smartphone },
   { id: 'maintenance', label: 'Maintenance', icon: Shield },
@@ -22,7 +23,6 @@ const TABS = [
 ];
 
 const FEATURE_FLAGS = [
-  { key: 'feature_google_signin', label: 'Google Sign-In', desc: 'Login screen par Google Sign-In button' },
   { key: 'feature_sos_button', label: 'SOS Emergency', desc: 'Emergency SOS button dikhaye' },
   { key: 'feature_live_tracking', label: 'Live Tracking', desc: 'Mechanic ka live location tracking' },
   { key: 'feature_razorpay', label: 'Razorpay Payment', desc: 'Online payment via Razorpay' },
@@ -32,6 +32,14 @@ const FEATURE_FLAGS = [
   { key: 'feature_ratings', label: 'Ratings & Reviews', desc: 'Mechanic ko rating dein' },
   { key: 'feature_referral', label: 'Referral System', desc: 'Refer & earn feature (Coming Soon)' },
   { key: 'feature_chat_support', label: 'Chat Support', desc: 'In-app chat support (Coming Soon)' },
+];
+
+const LOGIN_METHODS = [
+  { key: 'feature_phone_login', label: 'Phone OTP Login', desc: 'Mobile number + OTP se login', icon: '📱' },
+  { key: 'feature_email_login', label: 'Email/Password Login', desc: 'Email aur password se login', icon: '✉️' },
+  { key: 'feature_google_signin', label: 'Google Sign-In', desc: 'Google account se one-click login', icon: '🔍' },
+  { key: 'feature_apple_signin', label: 'Apple Sign-In', desc: 'Apple ID se login (iOS only)', icon: '🍎' },
+  { key: 'feature_whatsapp_login', label: 'WhatsApp Login', desc: 'WhatsApp number se login — Enable karne par OTP WhatsApp par aayega', icon: '💬' },
 ];
 
 // ===================== DEFAULTS =====================
@@ -95,6 +103,8 @@ export default function AppCustomizationPage() {
 
       const ff: Record<string, boolean> = {};
       FEATURE_FLAGS.forEach(f => { ff[f.key] = map[f.key] !== undefined ? map[f.key] : true; });
+      // Also parse login method flags into features
+      LOGIN_METHODS.forEach(f => { ff[f.key] = map[f.key] !== undefined ? map[f.key] : (f.key === 'feature_whatsapp_login' ? false : true); });
       setFeatures(ff);
     } catch {
       showToast('error', 'Config load karne mein error aayi');
@@ -138,6 +148,17 @@ export default function AppCustomizationPage() {
       }
       showToast('success', 'Feature flags save ho gaye! ✅');
     } catch { showToast('error', 'Features save mein error aayi'); }
+    finally { setSaving(false); }
+  };
+
+  const saveLoginMethods = async () => {
+    setSaving(true);
+    try {
+      for (const m of LOGIN_METHODS) {
+        await saveKey(m.key, features[m.key] ?? (m.key === 'feature_whatsapp_login' ? false : true), 'BOOLEAN', m.desc);
+      }
+      showToast('success', 'Login methods save ho gaye! ✅');
+    } catch { showToast('error', 'Login methods save mein error aayi'); }
     finally { setSaving(false); }
   };
 
@@ -351,6 +372,46 @@ export default function AppCustomizationPage() {
 
             <button onClick={saveFeatures} disabled={saving} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60">
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Features
+            </button>
+          </div>
+        )}
+
+        {/* =================== LOGIN METHODS =================== */}
+        {tab === 'login' && (
+          <div className="space-y-6">
+            <h2 className="font-semibold text-gray-800 flex items-center gap-2"><LogIn className="w-5 h-5 text-blue-500" /> Login Methods</h2>
+            <p className="text-sm text-gray-500">Customer app ki login screen par kaunsi login methods dikhni chahiye. Enable/Disable karein admin panel se — app mein turant reflect hoga.</p>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+              <p className="text-xs text-blue-700 font-medium">💡 <strong>WhatsApp Login:</strong> Enable karne par future mein customer ko OTP WhatsApp par aayega. Abhi "Coming Soon" mode mein hai. Jab WhatsApp Business API integrate karenge tab automatically kaam karega.</p>
+            </div>
+
+            <div className="space-y-3">
+              {LOGIN_METHODS.map(m => (
+                <div key={m.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{m.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{m.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{m.desc}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${features[m.key] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {features[m.key] ? 'ON' : 'OFF'}
+                    </span>
+                    <Toggle checked={features[m.key] ?? (m.key === 'feature_whatsapp_login' ? false : true)} onChange={v => setFeatures(ff => ({ ...ff, [m.key]: v }))} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <p className="text-xs text-yellow-700"><strong>⚠️ Note:</strong> Kam se kam ek login method (Phone OTP ya Email) enable rakhein, warna customer login nahi kar payega!</p>
+            </div>
+
+            <button onClick={saveLoginMethods} disabled={saving} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60">
+              {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Login Methods
             </button>
           </div>
         )}
