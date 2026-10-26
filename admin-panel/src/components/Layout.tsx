@@ -3,7 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Users, Wrench, CalendarCheck, Zap,
-  CreditCard, Tag, Bell, Settings, LogOut, Menu, X, Shield, Smartphone
+  CreditCard, Tag, Bell, Settings, LogOut, Menu, X, Shield, Smartphone, HardHat
 } from 'lucide-react';
 
 const NAV = [
@@ -15,7 +15,8 @@ const NAV = [
   { path: '/payments', icon: CreditCard, label: 'Payments' },
   { path: '/coupons', icon: Tag, label: 'Coupons' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
-  { path: '/customization', icon: Smartphone, label: 'App Customize' },
+  { path: '/customization', icon: Smartphone, label: 'Customer App' },
+  { path: '/mechanic-app', icon: HardHat, label: 'Mechanic App' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 

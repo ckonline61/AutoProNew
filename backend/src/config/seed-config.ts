@@ -183,6 +183,95 @@ const DEFAULT_CONFIGS: SeedEntry[] = [
     type: 'JSON',
     description: 'Top announcement bar in app',
   },
+  // Mechanic App Defaults
+  {
+    key: 'mechanic_live_location',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Allow sharing live location with customer',
+  },
+  {
+    key: 'mechanic_earnings_dashboard',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Enable earnings dashboard',
+  },
+  {
+    key: 'mechanic_sos_alerts',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Enable SOS emergency alerts',
+  },
+  {
+    key: 'mechanic_job_notifications',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Push notifications for new jobs',
+  },
+  {
+    key: 'mechanic_chat_with_customer',
+    value: false,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Chat with customer (Coming Soon)',
+  },
+  {
+    key: 'mechanic_document_upload',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Document and license upload',
+  },
+  {
+    key: 'mechanic_training_videos',
+    value: false,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Training videos section',
+  },
+  {
+    key: 'mechanic_incentive_tracker',
+    value: false,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Incentive tracker',
+  },
+  {
+    key: 'mechanic_phone_login',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Phone OTP login',
+  },
+  {
+    key: 'mechanic_email_login',
+    value: true,
+    type: 'BOOLEAN',
+    description: 'Mechanic: Email/password login',
+  },
+  {
+    key: 'mechanic_whatsapp_login',
+    value: false,
+    type: 'BOOLEAN',
+    description: 'Mechanic: WhatsApp login',
+  },
+  {
+    key: 'mechanic_maintenance',
+    value: {
+      enabled: false,
+      title: 'Under Maintenance',
+      message: 'Mechanic app maintenance mein hai. Jaldi wapas aayenge!',
+      estimatedTime: '',
+    },
+    type: 'JSON',
+    description: 'Mechanic App Maintenance mode configuration',
+  },
+  {
+    key: 'mechanic_announcement',
+    value: {
+      enabled: false,
+      text: '',
+      type: 'info',
+      dismissable: true,
+    },
+    type: 'JSON',
+    description: 'Mechanic App announcement banner',
+  },
 ];
 
 /**

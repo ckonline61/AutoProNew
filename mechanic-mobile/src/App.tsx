@@ -15,8 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { registerForPushNotifications, setupNotificationListeners } from './utils/pushNotifications';
 import api from './config/api';
-
 import { COLORS, SPACING } from './theme';
+import { ConfigProvider, useConfig } from './contexts/ConfigContext';
 import type {
   AuthStackParamList,
   MainTabParamList,
@@ -56,6 +56,30 @@ import {
 const Auth = createNativeStackNavigator<AuthStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+
+// Maintenance Gate — blocks mechanic app when mechanic_maintenance is enabled
+const MaintenanceGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { config } = useConfig();
+  if (config.maintenance?.enabled) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, backgroundColor: '#FFF' }}>
+        <Ionicons name="construct" size={64} color={COLORS.primary} />
+        <Text style={{ fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginTop: 20 }}>
+          {config.maintenance.title || 'Under Maintenance'}
+        </Text>
+        <Text style={{ fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginTop: 12, lineHeight: 20 }}>
+          {config.maintenance.message || 'Mechanic app maintenance mein hai. Jaldi wapas aayenge!'}
+        </Text>
+        {config.maintenance.estimatedTime ? (
+          <Text style={{ fontSize: 12, color: COLORS.primary, marginTop: 8 }}>
+            Expected: {config.maintenance.estimatedTime}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
+  return <>{children}</>;
+};
 
 export default function App() {
   // Auth state
@@ -417,9 +441,11 @@ export default function App() {
 
   // Main Flow: Bottom tabs with 4 tabs: Dashboard, Jobs, SOS, Profile
   return (
+    <ConfigProvider>
     <SafeAreaProvider>
       <SafeAreaView style={styles.root}>
         <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+        <MaintenanceGate>
         <NavigationContainer>
           <Tab.Navigator
             initialRouteName="Dashboard"
@@ -531,8 +557,10 @@ export default function App() {
             />
           </Tab.Navigator>
         </NavigationContainer>
+        </MaintenanceGate>
       </SafeAreaView>
     </SafeAreaProvider>
+    </ConfigProvider>
   );
 }
 
@@ -557,9 +585,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.tabBarBg,
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
-    height: 60,
-    paddingBottom: 8,
     paddingTop: 6,
+    paddingBottom: 16,
+    height: 68,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
