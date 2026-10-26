@@ -11,7 +11,7 @@ import { registerForPushNotifications, setupNotificationListeners } from './util
 import api from './config/api';
 
 const App: React.FC = () => {
-  const notificationListener = useRef<ReturnType<typeof setupNotificationListeners>>();
+  const notificationListener = useRef<ReturnType<typeof setupNotificationListeners> | null>(null);
 
   useEffect(() => {
     // Register push token and send to backend
