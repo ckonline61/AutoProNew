@@ -2,7 +2,10 @@ import axios from 'axios';
 import { normalizeCatalogItem } from './catalog';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    'https://auto-pro-backend-403346240734.asia-south1.run.app/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
